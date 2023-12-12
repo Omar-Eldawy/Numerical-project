@@ -14,8 +14,8 @@ class IterativeMethods:
         self.scaling()
 
     def is_diagonally_dominant(self):
-        diagonal = np.abs(self.A.diagonal())
-        row_sums = np.sum(np.abs(self.A), axis=1) - diagonal
+        diagonal = np.abs(self.A.diagonal())  # extract diagonal values as a vector
+        row_sums = np.sum(np.abs(self.A), axis=1) - diagonal  # sum all values in each row except the diagonal value
         return np.all(diagonal >= row_sums)
 
     def jacobi(self):
@@ -62,3 +62,4 @@ class IterativeMethods:
             after_scaling = array_copy[i:, i] / max_vector
             index_of_max = np.argmax(np.abs(after_scaling))
             self.A[index_of_max+i], self.A[i] = copy.deepcopy(self.A[i]), copy.deepcopy(self.A[index_of_max+i])
+            self.b[index_of_max + i], self.b[i] = copy.deepcopy(self.b[i]), copy.deepcopy(self.b[index_of_max + i])
