@@ -1,3 +1,5 @@
+import sys
+
 from Linear_Direct_Methods import LinearSolver
 import numpy as np
 from Linear_Iterative_Methods import IterativeMethods
@@ -11,3 +13,4 @@ answers = np.array([76, 28, 1])
 y = IterativeMethods(equations, answers, [1.0, 1, 1], 0.0001, 200)
 print(np.linalg.solve(equations, answers))
 print(y.gauss_seidel())
+print(sys.float_info.max)

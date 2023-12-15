@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>830</width>
+    <width>867</width>
     <height>624</height>
    </rect>
   </property>
@@ -18,7 +18,7 @@
     <rect>
      <x>-10</x>
      <y>300</y>
-     <width>831</width>
+     <width>881</width>
      <height>21</height>
     </rect>
    </property>
@@ -31,7 +31,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>831</width>
+     <width>871</width>
      <height>301</height>
     </rect>
    </property>
@@ -226,10 +226,10 @@ border-radius:5px;
    <widget class="QPushButton" name="previousButton">
     <property name="geometry">
      <rect>
-      <x>30</x>
+      <x>20</x>
       <y>30</y>
-      <width>81</width>
-      <height>17</height>
+      <width>91</width>
+      <height>20</height>
      </rect>
     </property>
     <property name="cursor">
@@ -263,7 +263,7 @@ border-radius:5px;
     <rect>
      <x>0</x>
      <y>320</y>
-     <width>831</width>
+     <width>871</width>
      <height>321</height>
     </rect>
    </property>
