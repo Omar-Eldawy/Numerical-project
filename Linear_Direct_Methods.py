@@ -66,3 +66,22 @@ class LinearSolver:
             print("Singular matrix")
             return -1
         return self.b
+    
+    def lu_decomposition_doolittle(self):
+        n = len(self.a)
+        l = [[0 for x in range(n)] for y in range(n)]
+        u = [[0 for x in range(n)] for y in range(n)]
+        for i in range(n):
+            l[i][i] = 1
+        for i in range(n):
+            for j in range(i, n):
+                sum = 0
+                for k in range(i):
+                    sum += (l[i][k] * u[k][j])
+                u[i][j] = self.a[i][j] - sum
+            for j in range(i, n):
+                sum = 0
+                for k in range(i):
+                    sum += (l[j][k] * u[k][i])
+                l[j][i] = (self.a[j][i] - sum) / u[i][i]
+        return l, u
