@@ -3,11 +3,14 @@ import numpy as np
 
 from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCursor
+from PyQt6.QtGui import QCursor, QIcon
 
-from PyQt6.QtWidgets import QDialog, QApplication, QWidget, QDoubleSpinBox, QGridLayout, QLabel, QVBoxLayout
+from PyQt6.QtWidgets import QDialog, QApplication, QWidget, QDoubleSpinBox, QGridLayout, QLabel, QMessageBox
 from PyQt6.uic import loadUi
 from PySide6.QtWidgets import QScrollArea
+
+from Linear_Direct_Methods import LinearSolver
+from Linear_Iterative_Methods import IterativeMethods
 
 
 class HomePage(QDialog):
@@ -18,6 +21,7 @@ class HomePage(QDialog):
         self.nonlinearButton.clicked.connect(self.goToNonLinear)
         self.linearButton.clicked.connect(self.goToLinear)
         self.exitButton.clicked.connect(self.exitProgram)
+
 
     def goToNonLinear(self):
         return  # phase 2
@@ -45,12 +49,12 @@ class LinearOptions(QDialog):
         self.operations = ["Gauss Jordan", "Gauss Elimination", "Jacobi", "Gauss Seidel", "LU"]
 
     def goToGaussJordan(self):
-        inputWindow = InputWindow(self.operations[0])
+        inputWindow = LinearWindow(self.operations[0])
         widget.addWidget(inputWindow)
         widget.setCurrentIndex(widget.currentIndex() + 1)
 
     def goToGaussElimination(self):
-        inputWindow = InputWindow(self.operations[1])
+        inputWindow = LinearWindow(self.operations[1])
         widget.addWidget(inputWindow)
         widget.setCurrentIndex(widget.currentIndex() + 1)
 
@@ -65,7 +69,7 @@ class LinearOptions(QDialog):
         widget.setCurrentIndex(widget.currentIndex() + 1)
 
     def goToLU(self):
-        inputWindow = InputWindow(self.operations[4])
+        inputWindow = LinearWindow(self.operations[4], self.LUcomboBox.currentText())
         widget.addWidget(inputWindow)
         widget.setCurrentIndex(widget.currentIndex() + 1)
 
@@ -84,14 +88,14 @@ class InputWindow(QDialog):
         self.numberOfEquations = 0
         self.maxIteration = 0
         self.tolerance = 0.0
-        self.initialGuess = np.array([])
-        self.equations = np.array([])
+        self.initialGuess = 0
+        self.equations = 0
+        self.B = 0
         self.previousButton.clicked.connect(self.go_to_previous)
         self.equationsInput.valueChanged.connect(self.set_number_of_equations)
         self.maxIterationsInput.valueChanged.connect(self.set_max_iteration)
         self.toleranceInput.valueChanged.connect(self.set_tolerance)
         self.solveButton.clicked.connect(self.solve)
-
 
     def go_to_previous(self):
         currentIndex = widget.currentIndex()
@@ -102,6 +106,7 @@ class InputWindow(QDialog):
     def set_number_of_equations(self, x):
         self.numberOfEquations = x
         self.arrange_initial_guess_area()
+        self.arrange_equations_input()
 
     def set_max_iteration(self, x):
         self.maxIteration = x
@@ -116,8 +121,201 @@ class InputWindow(QDialog):
             self.gridLayout_4.addWidget(label, 0, i)
             self.gridLayout_4.addWidget(DoubleSpinBox().doubleSpinBox, 1, i)
 
+    def arrange_equations_input(self):
+        label0 = Label().label
+        self.gridLayout_6.addWidget(label0, 0, 0)
+        for i in range(1, self.numberOfEquations + 1):
+            label = Label().label
+            label.setText("X" + str(i - 1))
+            label1 = Label().label
+            label1.setText(str(i - 1))
+            self.gridLayout_6.addWidget(label, 0, i)
+            self.gridLayout_6.addWidget(label1, i, 0)
+        final_label = Label().label
+        final_label.setText("b")
+        self.gridLayout_6.addWidget(final_label, 0, self.numberOfEquations + 1)
+        for i in range(1, self.numberOfEquations + 1):
+            for j in range(1, self.numberOfEquations + 2):
+                box = DoubleSpinBox().doubleSpinBox
+                self.gridLayout_6.addWidget(box, i, j)
+
     def solve(self):
-        return
+        self.store_equations_values()
+        self.store_initial_guess_values()
+        if self.operation == "Jacobi":
+            jacobi = IterativeMethods(self.equations, self.B, self.initialGuess, self.tolerance, self.maxIteration)
+            if jacobi.is_diagonally_dominant():
+                outputWindow = SolutionWindow(self.equations, self.B, self.operation, self.tolerance, self.maxIteration,
+                                              self.initialGuess)
+                widget.addWidget(outputWindow)
+                widget.setCurrentIndex(widget.currentIndex() + 1)
+            else:
+                msg = QMessageBox()
+                msg.setWindowTitle("Error")
+                msg.setText("The matrix is not diagonally dominant")
+                msg.setIcon(QMessageBox.Icon.Critical)
+                msg.exec()
+
+        elif self.operation == "Gauss Seidel":
+            gauss_seidel = IterativeMethods(self.equations, self.B, self.initialGuess, self.tolerance,
+                                            self.maxIteration)
+            if gauss_seidel.is_diagonally_dominant():
+                outputWindow = SolutionWindow(self.equations, self.B, self.operation, self.tolerance, self.maxIteration,
+                                              self.initialGuess)
+                widget.addWidget(outputWindow)
+                widget.setCurrentIndex(widget.currentIndex() + 1)
+            else:
+                msg = QMessageBox()
+                msg.setWindowTitle("Error")
+                msg.setText("The matrix is not diagonally dominant")
+                msg.setIcon(QMessageBox.Icon.Critical)
+                msg.exec()
+        else:
+            pass
+
+    def store_equations_values(self):
+        self.equations = np.zeros((self.numberOfEquations, self.numberOfEquations))
+        self.B = np.zeros(self.numberOfEquations)
+        for i in range(self.numberOfEquations):
+            for j in range(self.numberOfEquations):
+                self.equations[i][j] = self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value()
+        for i in range(self.numberOfEquations):
+            self.B[i] = self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value()
+
+    def store_initial_guess_values(self):
+        self.initialGuess = np.zeros(self.numberOfEquations)
+        for i in range(self.numberOfEquations):
+            self.initialGuess[i] = self.gridLayout_4.itemAtPosition(1, i).widget().value()
+
+
+class LinearWindow(QDialog):
+    def __init__(self, operation, LU=""):
+        super(LinearWindow, self).__init__()
+        loadUi("designs/inputWindowLinear.ui", self)
+        self.numberOfEquations = 0
+        self.equations = 0
+        self.B = 0
+        self.operation = operation
+        self.LU = LU
+        self.previousButton.clicked.connect(self.go_to_previous)
+        self.solveButton.clicked.connect(self.solve)
+        self.equationsInput.valueChanged.connect(self.set_number_of_equations)
+
+    def go_to_previous(self):
+        currentIndex = widget.currentIndex()
+        widgetToRemove = widget.currentWidget()
+        widget.removeWidget(widgetToRemove)
+        widget.setCurrentIndex(currentIndex - 1)
+
+    def set_number_of_equations(self, x):
+        self.numberOfEquations = x
+        self.arrange_equations_input()
+
+    def arrange_equations_input(self):
+        label0 = Label().label
+        self.gridLayout_6.addWidget(label0, 0, 0)
+        for i in range(1, self.numberOfEquations + 1):
+            label = Label().label
+            label.setText("X" + str(i - 1))
+            label1 = Label().label
+            label1.setText(str(i - 1))
+            self.gridLayout_6.addWidget(label, 0, i)
+            self.gridLayout_6.addWidget(label1, i, 0)
+        final_label = Label().label
+        final_label.setText("b")
+        self.gridLayout_6.addWidget(final_label, 0, self.numberOfEquations + 1)
+        for i in range(1, self.numberOfEquations + 1):
+            for j in range(1, self.numberOfEquations + 2):
+                box = DoubleSpinBox().doubleSpinBox
+                self.gridLayout_6.addWidget(box, i, j)
+
+    def solve(self):
+        self.store_equations_values()
+        if self.operation == "Gauss Jordan":
+            outputWindow = SolutionWindow(self.equations, self.B, self.operation)
+            widget.addWidget(outputWindow)
+            widget.setCurrentIndex(widget.currentIndex() + 1)
+        elif self.operation == "Gauss Elimination":
+            outputWindow = SolutionWindow(self.equations, self.B, self.operation)
+            widget.addWidget(outputWindow)
+            widget.setCurrentIndex(widget.currentIndex() + 1)
+        else:
+            if self.LU == "Doolittle Form":
+                pass
+            elif self.LU == "Crout Form":
+                pass
+            else:
+                pass
+
+    def store_equations_values(self):
+        self.equations = np.zeros((self.numberOfEquations, self.numberOfEquations))
+        self.B = np.zeros(self.numberOfEquations)
+        for i in range(self.numberOfEquations):
+            for j in range(self.numberOfEquations):
+                self.equations[i][j] = self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value()
+        for i in range(self.numberOfEquations):
+            self.B[i] = self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value()
+
+
+class SolutionWindow(QDialog):
+    def __init__(self, A, b, operation, tol=0, max_iter=0, x0=None):
+        super(SolutionWindow, self).__init__()
+        loadUi("designs/outPutWindow.ui", self)
+        direct = ["Gauss Jordan", "Gauss Elimination", "LU"]
+        self.previousButton.clicked.connect(self.go_to_previous)
+        self.noSolutionLabel.hide()
+        self.A = A
+        self.b = b
+        self.operation = operation
+        self.tol = tol
+        self.max_iter = max_iter
+        self.x0 = x0
+        self.answer = 0
+        if self.operation in direct:
+            self.direct = LinearSolver(self.A, self.b)
+        else:
+            self.indirect = IterativeMethods(self.A, self.b, self.x0, self.tol, self.max_iter)
+        self.show_answer()
+
+    def go_to_previous(self):
+        currentIndex = widget.currentIndex()
+        widgetToRemove = widget.currentWidget()
+        widget.removeWidget(widgetToRemove)
+        widget.setCurrentIndex(currentIndex - 1)
+
+    def solve(self):
+        if self.operation == "Gauss Jordan":
+            self.answer = self.direct.gauss_jordan()
+        elif self.operation == "Gauss Elimination":
+            self.answer = self.direct.gauss_elimination()
+        elif self.operation == "Jacobi":
+            self.answer = self.indirect.jacobi()
+        elif self.operation == "Gauss Seidel":
+            self.answer = self.indirect.gauss_seidel()
+        elif self.operation == "LU":
+            self.answer = self.direct.lu(self.A, self.b)
+        else:
+            pass
+
+    def show_answer(self):
+        self.solve()
+        if isinstance(self.answer, int) and self.answer == -1:
+            self.toggle_visibility()
+        else:
+            for i in range(len(self.A)):
+                label = Label().label
+                label.setText("X" + str(i))
+                label1 = Label().label
+                label1.setText(str(round(self.answer[i], 9)))
+                label1.setStyleSheet("font-size: 9px;")
+                self.gridLayout_4.addWidget(label, 0, i)
+                self.gridLayout_4.addWidget(label1, 1, i)
+
+    def toggle_visibility(self):
+        self.noSolutionLabel.show()
+        self.guessHolder.hide()
+        self.widget_2.hide()
+        self.label_4.hide()
 
 
 class DoubleSpinBox(QDoubleSpinBox):
@@ -161,7 +359,7 @@ class Label(QLabel):
         super(Label, self).__init__()
         self.label = QtWidgets.QLabel()
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setFixedWidth(30)
+        self.label.setFixedWidth(100)
         self.label.setFixedHeight(30)
         self.label.setStyleSheet("font-size: 16px;"
                                  "color: #652173;"
@@ -171,6 +369,9 @@ class Label(QLabel):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QIcon("pictures/icon.jpeg"))
+    app.setApplicationName("Numerical Methods")
+    app.setApplicationDisplayName("Numerical Methods")
     widget = QtWidgets.QStackedWidget()
     widget.setGeometry(250, 30, 800, 650)
     widget.setFixedWidth(850)

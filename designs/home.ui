@@ -39,13 +39,13 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>pictures/appIcon.png</normaloff>pictures/appIcon.png</iconset>
+    <normaloff>../pictures/appIcon.png</normaloff>../pictures/appIcon.png</iconset>
   </property>
   <property name="toolTip">
-   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   <string/>
   </property>
   <property name="whatsThis">
-   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   <string/>
   </property>
   <property name="autoFillBackground">
    <bool>false</bool>

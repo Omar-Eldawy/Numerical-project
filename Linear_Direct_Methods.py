@@ -10,7 +10,7 @@ class LinearSolver:
 
     def gauss_elimination(self):
         flag = self.forward_elimination()
-        if flag == -1:
+        if isinstance(flag, int) and flag == -1:
             print("Singular matrix")
             return -1
         return self.backward_substitution()
@@ -62,7 +62,7 @@ class LinearSolver:
 
     def gauss_jordan(self):
         flag = self.gauss_jordan_elimination()
-        if flag == -1:
+        if isinstance(flag, int) and flag == -1:
             print("Singular matrix")
             return -1
         return self.b

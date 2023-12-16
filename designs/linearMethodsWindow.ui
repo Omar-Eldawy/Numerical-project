@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>../pictures/appIcon.png</normaloff>../pictures/appIcon.png</iconset>
+  </property>
   <widget class="Line" name="line">
    <property name="geometry">
     <rect>
