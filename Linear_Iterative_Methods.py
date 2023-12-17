@@ -6,7 +6,7 @@ from numpy import array
 
 
 class IterativeMethods:
-    def __init__(self, A: array, b: array, x0: list, tol: float, max_iter: int, precision=17):
+    def __init__(self, A: array, b: array, x0: list, tol: float, max_iter: int, precision=9):
         self.A = A
         self.b = b
         self.x0 = [float(x) for x in x0]

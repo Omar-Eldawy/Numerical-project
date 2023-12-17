@@ -214,7 +214,7 @@ class LinearSolver:
 
     def cholesky_lu(self):
         L, U = self.cholesky_lu_decomposition()
-        if isinstance(L, int) and L == -1:
+        if (isinstance(L, int) and L == -1) or np.any(np.linalg.eigvals(L) == 0):
             print("Not positive-definite matrix")
             return -1
         y = self.cholesky_forward_substitution(L)
