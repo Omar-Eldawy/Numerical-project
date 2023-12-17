@@ -1,3 +1,4 @@
+import math
 import sys
 import time
 
@@ -13,6 +14,17 @@ from PySide6.QtWidgets import QScrollArea
 
 from Linear_Direct_Methods import LinearSolver
 from Linear_Iterative_Methods import IterativeMethods
+
+
+# def round_to_significant_digit(number, digits):
+#     rounded_number = np.around(number, digits - int(np.floor(np.log10(abs(number)))) - 1)
+#     return rounded_number
+def round_to_significant_digit(num, significant):
+    if num == 0:
+        return 0
+    else:
+        x = round(num, -int(math.floor(math.log10(abs(num)))) + (significant - 1))
+        return x
 
 
 class HomePage(QDialog):
@@ -96,6 +108,8 @@ class InputWindow(QDialog):
         self.initialGuess = 0
         self.equations = 0
         self.B = 0
+        self.significantDigits = 9
+        self.percisionInput.valueChanged.connect(self.set_significant)
         self.previousButton.clicked.connect(self.go_to_previous)
         self.equationsInput.valueChanged.connect(self.set_number_of_equations)
         self.maxIterationsInput.valueChanged.connect(self.set_max_iteration)
@@ -107,6 +121,9 @@ class InputWindow(QDialog):
         widgetToRemove = widget.currentWidget()
         widget.removeWidget(widgetToRemove)
         widget.setCurrentIndex(currentIndex - 1)
+
+    def set_significant(self):
+        self.significantDigits = self.percisionInput.value()
 
     def set_number_of_equations(self, x):
         self.numberOfEquations = x
@@ -166,10 +183,10 @@ class InputWindow(QDialog):
         self.store_equations_values()
         self.store_initial_guess_values()
         if self.operation == "Jacobi":
-            jacobi = IterativeMethods(self.equations, self.B, self.initialGuess, self.tolerance, self.maxIteration)
+            jacobi = IterativeMethods(self.equations, self.B, self.initialGuess, self.tolerance, self.maxIteration, self.significantDigits)
             if jacobi.is_diagonally_dominant():
                 outputWindow = SolutionWindow(self.equations, self.B, self.operation, self.tolerance, self.maxIteration,
-                                              self.initialGuess)
+                                              self.initialGuess, self.significantDigits)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             else:
@@ -181,10 +198,10 @@ class InputWindow(QDialog):
 
         elif self.operation == "Gauss Seidel":
             gauss_seidel = IterativeMethods(self.equations, self.B, self.initialGuess, self.tolerance,
-                                            self.maxIteration)
+                                            self.maxIteration, self.significantDigits)
             if gauss_seidel.is_diagonally_dominant():
                 outputWindow = SolutionWindow(self.equations, self.B, self.operation, self.tolerance, self.maxIteration,
-                                              self.initialGuess)
+                                              self.initialGuess, self.significantDigits)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             else:
@@ -201,14 +218,14 @@ class InputWindow(QDialog):
         self.B = np.zeros(self.numberOfEquations)
         for i in range(self.numberOfEquations):
             for j in range(self.numberOfEquations):
-                self.equations[i][j] = self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value()
+                self.equations[i][j] = round_to_significant_digit(self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value(), self.significantDigits)
         for i in range(self.numberOfEquations):
-            self.B[i] = self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value()
+            self.B[i] = round_to_significant_digit(self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value(), self.significantDigits)
 
     def store_initial_guess_values(self):
         self.initialGuess = np.zeros(self.numberOfEquations)
         for i in range(self.numberOfEquations):
-            self.initialGuess[i] = self.gridLayout_4.itemAtPosition(1, i).widget().value()
+            self.initialGuess[i] = round_to_significant_digit(self.gridLayout_4.itemAtPosition(1, i).widget().value(), self.significantDigits)
 
 
 class LinearWindow(QDialog):
@@ -220,15 +237,21 @@ class LinearWindow(QDialog):
         self.B = 0
         self.operation = operation
         self.LU = LU
+        self.significantDigits = 9
         self.previousButton.clicked.connect(self.go_to_previous)
         self.solveButton.clicked.connect(self.solve)
         self.equationsInput.valueChanged.connect(self.set_number_of_equations)
+        self.percisionInput.valueChanged.connect(self.set_significant)
 
     def go_to_previous(self):
         currentIndex = widget.currentIndex()
         widgetToRemove = widget.currentWidget()
         widget.removeWidget(widgetToRemove)
         widget.setCurrentIndex(currentIndex - 1)
+
+    def set_significant(self, x):
+        self.significantDigits = x
+        print(self.significantDigits)
 
     def set_number_of_equations(self, x):
         self.numberOfEquations = x
@@ -267,20 +290,20 @@ class LinearWindow(QDialog):
             return
         self.store_equations_values()
         if self.operation == "Gauss Jordan":
-            outputWindow = SolutionWindow(self.equations, self.B, self.operation)
+            outputWindow = SolutionWindow(self.equations, self.B, self.operation,0, 0, 0, self.significantDigits)
             widget.addWidget(outputWindow)
             widget.setCurrentIndex(widget.currentIndex() + 1)
         elif self.operation == "Gauss Elimination":
-            outputWindow = SolutionWindow(self.equations, self.B, self.operation)
+            outputWindow = SolutionWindow(self.equations, self.B, self.operation,0, 0, 0, self.significantDigits)
             widget.addWidget(outputWindow)
             widget.setCurrentIndex(widget.currentIndex() + 1)
         else:
             if self.LU == "Doolittle Form":
-                outputWindow = SolutionWindow(self.equations, self.B, self.LU)
+                outputWindow = SolutionWindow(self.equations, self.B, self.LU,0, 0, 0, self.significantDigits)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             elif self.LU == "Crout Form":
-                outputWindow = SolutionWindow(self.equations, self.B, self.LU)
+                outputWindow = SolutionWindow(self.equations, self.B, self.LU,0, 0, 0, self.significantDigits)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             else:
@@ -292,7 +315,7 @@ class LinearWindow(QDialog):
                     msg.setIcon(QMessageBox.Icon.Critical)
                     msg.exec()
                     return
-                outputWindow = SolutionWindow(self.equations, self.B, self.LU)
+                outputWindow = SolutionWindow(self.equations, self.B, self.LU,0, 0, 0, self.significantDigits)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
 
@@ -301,13 +324,13 @@ class LinearWindow(QDialog):
         self.B = np.zeros(self.numberOfEquations)
         for i in range(self.numberOfEquations):
             for j in range(self.numberOfEquations):
-                self.equations[i][j] = self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value()
+                self.equations[i][j] = round_to_significant_digit(self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value(), self.significantDigits)
         for i in range(self.numberOfEquations):
-            self.B[i] = self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value()
+            self.B[i] = round_to_significant_digit(self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value(), self.significantDigits)
 
 
 class SolutionWindow(QDialog):
-    def __init__(self, A, b, operation, tol=0, max_iter=0, x0=None):
+    def __init__(self, A, b, operation, tol=0, max_iter=0, x0=None, significantDigits=9):
         super(SolutionWindow, self).__init__()
         loadUi("designs/outPutWindow.ui", self)
         direct = ["Gauss Jordan", "Gauss Elimination", "Doolittle Form", "Crout Form", "Cholesky Form"]
@@ -321,10 +344,11 @@ class SolutionWindow(QDialog):
         self.x0 = x0
         self.answer = 0
         self.total_time = 0
+        self.significantDigits = significantDigits
         if self.operation in direct:
-            self.direct = LinearSolver(self.A, self.b)
+            self.direct = LinearSolver(self.A, self.b, significantDigits)
         else:
-            self.indirect = IterativeMethods(self.A, self.b, self.x0, self.tol, self.max_iter)
+            self.indirect = IterativeMethods(self.A, self.b, self.x0, self.tol, self.max_iter, significantDigits)
         self.show_answer()
 
     def go_to_previous(self):
@@ -380,7 +404,7 @@ class SolutionWindow(QDialog):
                 label = Label().label
                 label.setText("X" + str(i))
                 label1 = Label().label
-                label1.setText(str(round(self.answer[i], 9)))
+                label1.setText(str(round_to_significant_digit(self.answer[i], self.significantDigits)))
                 label1.setStyleSheet("font-size: 9px;")
                 self.gridLayout_4.addWidget(label, 0, i)
                 self.gridLayout_4.addWidget(label1, 1, i)

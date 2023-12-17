@@ -1,17 +1,20 @@
 import copy
+import math
 
 import numpy as np
 from numpy import array
 
 
 class IterativeMethods:
-    def __init__(self, A: array, b: array, x0: list, tol: float, max_iter: int):
+    def __init__(self, A: array, b: array, x0: list, tol: float, max_iter: int, percision=17):
         self.A = A
         self.b = b
         self.x0 = [float(x) for x in x0]
         self.tol = tol
         self.max_iter = max_iter
         self.scaling()
+        self.percision = percision
+
 
     def is_diagonally_dominant(self):
         diagonal = np.abs(self.A.diagonal())  # extract diagonal values as a vector
@@ -28,7 +31,7 @@ class IterativeMethods:
             for i in range(len(x)):
                 s1 = float(np.dot(self.A[i, :i], x[:i]))  # dot product before xi element
                 s2 = float(np.dot(self.A[i, i + 1:], x[i + 1:]))  # dot product after xi element
-                x_new[i] = (self.b[i] - s1 - s2) / float(self.A[i, i])  # calculate the new xi
+                x_new[i] = self.round_to_significant_digit((self.b[i] - s1 - s2) / float(self.A[i, i]))  # calculate the new xi
             if np.linalg.norm(x_new - x) < self.tol:
                 break
             x = x_new
@@ -44,7 +47,7 @@ class IterativeMethods:
             for i in range(len(x)):
                 s1 = np.dot(self.A[i, :i], x_new[:i])
                 s2 = np.dot(self.A[i, i + 1:], x[i + 1:])
-                x_new[i] = (self.b[i] - s1 - s2) / float(self.A[i, i])
+                x_new[i] = self.round_to_significant_digit((self.b[i] - s1 - s2) / float(self.A[i, i]))
             if np.linalg.norm(x_new - x) < self.tol:
                 break
             x = x_new
@@ -63,3 +66,10 @@ class IterativeMethods:
             index_of_max = np.argmax(np.abs(after_scaling))
             self.A[index_of_max+i], self.A[i] = copy.deepcopy(self.A[i]), copy.deepcopy(self.A[index_of_max+i])
             self.b[index_of_max + i], self.b[i] = copy.deepcopy(self.b[i]), copy.deepcopy(self.b[index_of_max + i])
+
+    def round_to_significant_digit(self, num):
+        if num == 0:
+            return 0
+        else:
+            x = round(num, -int(math.floor(math.log10(abs(num)))) + (self.precision - 1))
+            return x

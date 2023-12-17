@@ -1,13 +1,16 @@
 import copy
+import math
 
 import numpy as np
 from numpy import array
 
 
 class LinearSolver:
-    def __init__(self, a: array, b: list):
+    def __init__(self, a: array, b: list, precision=17):
         self.a = a  # coefficients matrix
         self.b = b  # constants matrix
+        self.precision = precision
+        self.tol = 10 ** -self.precision
 
     def gauss_elimination(self):
         flag = self.forward_elimination()
@@ -19,38 +22,38 @@ class LinearSolver:
     def forward_elimination(self):
         for i in range(len(self.a)):
             self.partial_pivoting(i)
-            if self.a[i][i] == 0:
+            if self.a[i][i] == 0 or abs(self.a[i][i]) < self.tol:
                 return -1  # singular matrix
             for j in range(i + 1, len(self.a)):
-                factor = self.a[j][i] / self.a[i][i]
+                factor = self.round_to_significant_digit(self.a[j][i] / self.a[i][i])
                 for k in range(len(self.a)):
-                    self.a[j][k] -= factor * self.a[i][k]
-                self.b[j] -= factor * self.b[i]
+                    self.a[j][k] = self.a[j][k] - self.round_to_significant_digit(factor * self.a[i][k])
+                self.b[j] = self.b[j] - self.round_to_significant_digit(factor * self.b[i])
         return 0
 
     def gauss_jordan_elimination(self):
         for i in range(len(self.a)):
             self.partial_pivoting(i)
-            if self.a[i][i] == 0:
+            if self.a[i][i] == 0 or abs(self.a[i][i]) < self.tol:
                 return -1  # singular matrix
             scale = self.a[i][i]
             for j in range(len(self.a)):
-                self.a[i][j] /= scale
-            self.b[i] /= scale
+                self.a[i][j] = self.round_to_significant_digit(self.a[i][j] / scale)
+            self.b[i] = self.round_to_significant_digit(self.b[i] / scale)
             for j in range(len(self.a)):
                 if i != j:
                     factor = self.a[j][i] / self.a[i][i]
                     for k in range(len(self.a)):
-                        self.a[j][k] -= factor * self.a[i][k]
-                    self.b[j] -= factor * self.b[i]
+                        self.a[j][k] = self.a[j][k] - self.round_to_significant_digit(factor * self.a[i][k])
+                    self.b[j] = self.round_to_significant_digit(self.b[j] - self.round_to_significant_digit(factor * self.b[i]))
         return self.b
 
     def backward_substitution(self):
         x = [0 for i in range(len(self.a))]  # generate a list of zeros representing the number of variables
         for i in range(len(self.a) - 1, -1, -1):
-            x[i] = self.b[i] / self.a[i][i]
+            x[i] = self.round_to_significant_digit(self.b[i] / self.a[i][i])
             for j in range(i - 1, -1, -1):
-                self.b[j] -= self.a[j][i] * x[i]
+                self.b[j] = self.round_to_significant_digit(self.b[j] - self.round_to_significant_digit(self.a[j][i] * x[i]))
         return x
 
     def partial_pivoting(self, current_row):
@@ -68,17 +71,18 @@ class LinearSolver:
             return -1
         return self.b
 
-    def doolittle_decomposition(self, scaling_factors, pivot_rows, tol=1e-10):
+    def doolittle_decomposition(self, scaling_factors, pivot_rows):
         scaling_factors, pivot_rows = self.get_scaling_factors(scaling_factors, pivot_rows)
         for k in range(len(self.a)):
             pivot_rows = self.get_pivot(scaling_factors, pivot_rows, k)
-            if abs(self.a[pivot_rows[k], k] / scaling_factors[pivot_rows[k]]) < tol:
+            if abs(self.a[pivot_rows[k], k] / scaling_factors[pivot_rows[k]]) < self.tol:
                 return -1
             for i in range(k + 1, len(self.a)):
-                factor = self.a[pivot_rows[i], k] / self.a[pivot_rows[k], k]
+                factor = self.round_to_significant_digit(self.a[pivot_rows[i], k] / self.a[pivot_rows[k], k])
                 self.a[pivot_rows[i], k] = factor
                 for j in range(k + 1, len(self.a)):
-                    self.a[pivot_rows[i], j] -= factor * self.a[pivot_rows[k], j]
+                    self.a[pivot_rows[i], j] = self.a[pivot_rows[i], j] - self.round_to_significant_digit(
+                        factor * self.a[pivot_rows[k], j])
         return pivot_rows
 
     def doolittle_substitution(self, o):
@@ -87,12 +91,12 @@ class LinearSolver:
         for i in range(len(self.a)):
             y[i] = self.b[o[i]]
             for j in range(i):
-                y[i] -= self.a[o[i], j] * y[j]
+                y[i] = y[i] - self.round_to_significant_digit(self.a[o[i], j] * y[j])
         for i in range(len(self.a) - 1, -1, -1):
             x[i] = y[i]
             for j in range(i + 1, len(self.a)):
-                x[i] -= self.a[o[i], j] * x[j]
-            x[i] /= self.a[o[i], i]
+                x[i] = x[i] - self.round_to_significant_digit(self.a[o[i], j] * x[j])
+            x[i] = self.round_to_significant_digit(x[i] / self.a[o[i], i])
         return x
 
     def get_scaling_factors(self, s, o):
@@ -103,9 +107,9 @@ class LinearSolver:
 
     def get_pivot(self, s, o, k):
         p = k
-        big = abs(self.a[o[k], k] / s[o[k]])
+        big = self.round_to_significant_digit(abs(self.a[o[k], k] / s[o[k]]))
         for i in range(k + 1, len(self.a)):
-            dummy = abs(self.a[o[i], k] / s[o[i]])
+            dummy = self.round_to_significant_digit(abs(self.a[o[i], k] / s[o[i]]))
             if dummy > big:
                 big = dummy
                 p = i
@@ -114,10 +118,10 @@ class LinearSolver:
         o[k] = dummy
         return o
 
-    def doolittle(self, tol=1e-10):
+    def doolittle(self):
         scaling_factors = np.zeros(len(self.a))
         pivot_rows = np.zeros(len(self.a), dtype=int)
-        pivot_rows = self.doolittle_decomposition(scaling_factors, pivot_rows, tol)
+        pivot_rows = self.doolittle_decomposition(scaling_factors, pivot_rows)
         if isinstance(pivot_rows, int) and pivot_rows == -1:
             print("Singular matrix")
             return -1
@@ -132,8 +136,7 @@ class LinearSolver:
             for i in range(j, n):
                 L[i, j] = self.a[i, j] - L[i, :j].dot(U[:j, j])
             for i in range(j + 1, n):
-                U[j, i] = (self.a[j, i] - L[j, :j].dot(U[:j, i])) / L[j, j]
-
+                U[j, i] = (self.a[j, i] - self.round_to_significant_digit(L[j, :j].dot(U[:j, i])) / L[j, j])
         return L, U
 
     def crout_forward_substitution(self, L):
@@ -141,7 +144,7 @@ class LinearSolver:
         y = np.zeros(n)
 
         for i in range(n):
-            y[i] = (self.b[i] - L[i, :i].dot(y[:i])) / L[i, i]
+            y[i] = (self.b[i] - self.round_to_significant_digit(L[i, :i].dot(y[:i])) / L[i, i])
 
         return y
 
@@ -150,13 +153,13 @@ class LinearSolver:
         x = np.zeros(n)
 
         for i in range(n - 1, -1, -1):
-            x[i] = (y[i] - U[i, i + 1:].dot(x[i + 1:])) / U[i, i]
+            x[i] = (y[i] - self.round_to_significant_digit(U[i, i + 1:].dot(x[i + 1:])) / U[i, i])
 
         return x
 
-    def crout_lu(self, tol=1e-10):
+    def crout_lu(self):
         L, U = self.crout_lu_decomposition()
-        if np.any(abs(np.diagonal(L)) < tol):
+        if np.any(abs(np.diagonal(L)) < self.tol):
             print("Singular matrix")
             return -1
         y = self.crout_forward_substitution(L)
@@ -185,9 +188,9 @@ class LinearSolver:
                 tmp_sum = sum(L[i][j] * L[k][j] for j in range(k))
 
                 if i == k:  # Diagonal elements
-                    L[i][k] = np.sqrt(self.a[i][i] - tmp_sum)
+                    L[i][k] = self.round_to_significant_digit(np.sqrt(self.a[i][i] - tmp_sum))
                 else:
-                    L[i][k] = (1.0 / L[k][k] * (self.a[i][k] - tmp_sum))
+                    L[i][k] = self.round_to_significant_digit((1.0 / L[k][k] * (self.a[i][k] - tmp_sum)))
         return L, L.T  # matrix, transpose of matrix
 
     def cholesky_forward_substitution(self, L):
@@ -195,7 +198,7 @@ class LinearSolver:
         y = np.zeros(n)
 
         for i in range(n):
-            y[i] = (self.b[i] - L[i, :i].dot(y[:i])) / L[i, i]
+            y[i] = self.round_to_significant_digit((self.b[i] - L[i, :i].dot(y[:i])) / L[i, i])
 
         return y
 
@@ -204,7 +207,7 @@ class LinearSolver:
         x = np.zeros(n)
 
         for i in range(n - 1, -1, -1):
-            x[i] = (y[i] - U[i, i + 1:].dot(x[i + 1:])) / U[i, i]
+            x[i] = self.round_to_significant_digit((y[i] - U[i, i + 1:].dot(x[i + 1:])) / U[i, i])
 
         return x
 
@@ -216,3 +219,10 @@ class LinearSolver:
         y = self.cholesky_forward_substitution(L)
         x = self.cholesky_backward_substitution(U, y)
         return x
+
+    def round_to_significant_digit(self, num):
+        if num == 0:
+            return 0
+        else:
+            x = round(num, -int(math.floor(math.log10(abs(num)))) + (self.precision - 1))
+            return x
