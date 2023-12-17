@@ -102,8 +102,8 @@ class InputWindow(QDialog):
         super(InputWindow, self).__init__()
         loadUi("designs/inputWindow.ui", self)
         self.operation = operation
-        self.numberOfEquations = 1
-        self.maxIteration = 2
+        self.numberOfEquations = 0
+        self.maxIteration = 50
         self.tolerance = 0.0001
         self.initialGuess = 0
         self.equations = 0
@@ -173,10 +173,17 @@ class InputWindow(QDialog):
                 self.gridLayout_6.addWidget(box, i, j)
 
     def solve(self):
-        if self.numberOfEquations == 1:
+        if self.numberOfEquations == 0:
             msg = QMessageBox()
             msg.setWindowTitle("Error")
-            msg.setText("The number of equations must be greater than 1")
+            msg.setText("The number of equations must be greater than 0")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.exec()
+            return
+        elif self.numberOfEquations == 1:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText("Answer is right in front of you :)")
             msg.setIcon(QMessageBox.Icon.Critical)
             msg.exec()
             return
@@ -232,7 +239,7 @@ class LinearWindow(QDialog):
     def __init__(self, operation, LU=""):
         super(LinearWindow, self).__init__()
         loadUi("designs/inputWindowLinear.ui", self)
-        self.numberOfEquations = 1
+        self.numberOfEquations = 0
         self.equations = 0
         self.B = 0
         self.operation = operation
@@ -255,7 +262,14 @@ class LinearWindow(QDialog):
 
     def set_number_of_equations(self, x):
         self.numberOfEquations = x
-        self.arrange_equations_input()
+        if x > 0:
+            self.arrange_equations_input()
+        else:
+            while self.gridLayout_6.count():
+                item = self.gridLayout_6.takeAt(0)
+                current = item.widget()
+                if current:
+                    current.deleteLater()
 
     def arrange_equations_input(self):
         while self.gridLayout_6.count():
@@ -281,10 +295,17 @@ class LinearWindow(QDialog):
                 self.gridLayout_6.addWidget(box, i, j)
 
     def solve(self):
-        if self.numberOfEquations == 1:
+        if self.numberOfEquations == 0:
             msg = QMessageBox()
             msg.setWindowTitle("Error")
-            msg.setText("The number of equations must be greater than 1")
+            msg.setText("The number of equations must be greater than 0")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.exec()
+            return
+        elif self.numberOfEquations == 1:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText("the Answer is right in front of you :)")
             msg.setIcon(QMessageBox.Icon.Critical)
             msg.exec()
             return
@@ -308,7 +329,7 @@ class LinearWindow(QDialog):
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             else:
                 cholesky = LinearSolver(self.equations, self.B)
-                if cholesky.is_singular():
+                if not cholesky.is_positive_definite():
                     msg = QMessageBox()
                     msg.setWindowTitle("Error")
                     msg.setText("The matrix is not positive definite")
@@ -390,7 +411,7 @@ class SolutionWindow(QDialog):
             self.total_time = end - start
         else:
             start = time.perf_counter()
-            self.answer = self.direct.cholesky_lu(self.A, self.b)
+            self.answer = self.direct.cholesky_lu()
             end = time.perf_counter()
             self.total_time = end - start
 

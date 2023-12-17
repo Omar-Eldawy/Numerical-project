@@ -130,13 +130,14 @@ class LinearSolver:
     def crout_lu_decomposition(self):
         n = len(self.a)
         L = np.zeros((n, n))
-        U = np.eye(n)
+        U = np.eye(n)  # U is an identity matrix
 
         for j in range(n):
             for i in range(j, n):
-                L[i, j] = self.a[i, j] - L[i, :j].dot(U[:j, j])
-            for i in range(j + 1, n):
-                U[j, i] = (self.a[j, i] - self.round_to_significant_digit(L[j, :j].dot(U[:j, i])) / L[j, j])
+                L[i, j] = self.round_to_significant_digit(self.a[i, j] - L[i, :j].dot(U[:j, j]))
+            for i in range(j, n):
+                if i > j:
+                    U[j, i] = self.round_to_significant_digit((self.a[j, i] - L[j, :i].dot(U[:i, i])) / L[j, j])
         return L, U
 
     def crout_forward_substitution(self, L):
@@ -144,8 +145,8 @@ class LinearSolver:
         y = np.zeros(n)
 
         for i in range(n):
-            y[i] = (self.b[i] - self.round_to_significant_digit(L[i, :i].dot(y[:i])) / L[i, i])
-
+            sum_Ly = self.round_to_significant_digit(sum(L[i, j] * y[j] for j in range(i)))
+            y[i] = self.round_to_significant_digit((self.b[i] - sum_Ly) / L[i, i])
         return y
 
     def crout_backward_substitution(self, U, y):
@@ -153,8 +154,8 @@ class LinearSolver:
         x = np.zeros(n)
 
         for i in range(n - 1, -1, -1):
-            x[i] = (y[i] - self.round_to_significant_digit(U[i, i + 1:].dot(x[i + 1:])) / U[i, i])
-
+            sum_Ux = self.round_to_significant_digit(sum(U[i, j] * x[j] for j in range(i + 1, n)))
+            x[i] = self.round_to_significant_digit((y[i] - sum_Ux) / U[i, i])
         return x
 
     def crout_lu(self):
@@ -173,7 +174,7 @@ class LinearSolver:
             return False
 
         # Check if the matrix is positive-definite
-        if not np.all(np.linalg.eigvals(self.a) > 0):
+        if not np.all(np.linalg.eigvals(self.a) >= 0):
             print("Matrix is not positive-definite")
             return False
         return True

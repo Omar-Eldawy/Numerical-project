@@ -6,14 +6,14 @@ from numpy import array
 
 
 class IterativeMethods:
-    def __init__(self, A: array, b: array, x0: list, tol: float, max_iter: int, percision=17):
+    def __init__(self, A: array, b: array, x0: list, tol: float, max_iter: int, precision=17):
         self.A = A
         self.b = b
         self.x0 = [float(x) for x in x0]
         self.tol = tol
         self.max_iter = max_iter
         self.scaling()
-        self.percision = percision
+        self.precision = precision
 
 
     def is_diagonally_dominant(self):
