@@ -441,8 +441,17 @@ class SolutionWindow(QDialog):
         self.solve()
         if isinstance(self.answer, int) and (self.answer == -1 or self.flag == -1):
             self.toggle_visibility()
-        elif isinstance(self.answer, int) and (self.answer == -2 or self.flag == -2):
-            self.diverge()
+        elif self.flag == -2:
+            self.diverge_window()
+            self.timerLabel.setText(f'Time: {self.total_time:.7f} nano seconds')
+            for i in range(len(self.A)):
+                label = Label().label
+                label.setText("X" + str(i))
+                label1 = Label().label
+                label1.setText(str(round_to_significant_digit(self.answer[i], self.significantDigits)))
+                label1.setStyleSheet("font-size: 9px;")
+                self.gridLayout_4.addWidget(label, 0, i)
+                self.gridLayout_4.addWidget(label1, 1, i)
         else:
             self.timerLabel.setText(f'Time: {self.total_time:.7f} nano seconds')
             for i in range(len(self.A)):
@@ -463,7 +472,7 @@ class SolutionWindow(QDialog):
         self.tableWidget.hide()
         self.diverge.hide()
 
-    def diverge(self):
+    def diverge_window(self):
         self.noSolutionLabel.hide()
         self.diverge.show()
 
