@@ -2,24 +2,31 @@ import copy
 import math
 
 import numpy as np
+from PyQt6 import QtWidgets
 from numpy import array
 
 
 class IterativeMethods:
-    def __init__(self, A: array, b: array, x0: list, tol: float, max_iter: int, precision=9):
+    def __init__(self, A: array, b: array, x0: list, tol: float, max_iter: int, precision=9, table=None):
         self.A = A
         self.b = b
         self.x0 = [float(x) for x in x0]
         self.tol = tol
         self.max_iter = max_iter
-        self.scaling()
         self.precision = precision
-
+        self.table = table
+        self.table_counter = 0
 
     def is_diagonally_dominant(self):
         diagonal = np.abs(self.A.diagonal())  # extract diagonal values as a vector
         row_sums = np.sum(np.abs(self.A), axis=1) - diagonal  # sum all values in each row except the diagonal value
-        return np.all(diagonal >= row_sums)
+        if np.all(diagonal >= row_sums):
+            return True
+        else:
+            self.scaling()
+            diagonal = np.abs(self.A.diagonal())
+            row_sums = np.sum(np.abs(self.A), axis=1) - diagonal
+            return np.all(diagonal >= row_sums)
 
     def jacobi(self):
         if self.is_singular():
@@ -32,7 +39,9 @@ class IterativeMethods:
                 s1 = float(np.dot(self.A[i, :i], x[:i]))  # dot product before xi element
                 s2 = float(np.dot(self.A[i, i + 1:], x[i + 1:]))  # dot product after xi element
                 x_new[i] = self.round_to_significant_digit((self.b[i] - s1 - s2) / float(self.A[i, i]))  # calculate the new xi
-            if np.linalg.norm(x_new - x) < self.tol:
+            eps = np.linalg.norm(x_new - x)
+            self.add_to_table(eps, x_new)
+            if eps < self.tol:
                 break
             x = x_new
         return x
@@ -48,7 +57,9 @@ class IterativeMethods:
                 s1 = np.dot(self.A[i, :i], x_new[:i])
                 s2 = np.dot(self.A[i, i + 1:], x[i + 1:])
                 x_new[i] = self.round_to_significant_digit((self.b[i] - s1 - s2) / float(self.A[i, i]))
-            if np.linalg.norm(x_new - x) < self.tol:
+            eps = np.linalg.norm(x_new - x)
+            self.add_to_table(eps, x_new)
+            if eps < self.tol:
                 break
             x = x_new
         return x
@@ -73,3 +84,17 @@ class IterativeMethods:
         else:
             x = round(num, -int(math.floor(math.log10(abs(num)))) + (self.precision - 1))
             return x
+
+    def add_to_table(self, epsilon, x):
+        counter = len(self.x0)
+        self.table.setColumnCount(counter + 1)
+        column_headers = [f"X{i}" for i in range(counter)]
+        column_headers.append("epsilon")
+        self.table.setHorizontalHeaderLabels(column_headers)
+        for i in range(counter):
+            self.table.insertRow(i + self.table_counter)
+            self.table.setItem(self.table_counter, i, QtWidgets.QTableWidgetItem(str(x[i])))
+            self.table.setColumnWidth(i, 170)
+        self.table.setItem(self.table_counter, counter, QtWidgets.QTableWidgetItem(str(epsilon)))
+        self.table.setColumnWidth(counter, 170)
+        self.table_counter += 1

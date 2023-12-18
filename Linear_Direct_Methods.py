@@ -2,15 +2,19 @@ import copy
 import math
 
 import numpy as np
+from PyQt6 import QtWidgets
+# from PySide6 import QtWidgets
 from numpy import array
-
+from PyQt6.QtWidgets import QApplication, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 class LinearSolver:
-    def __init__(self, a: array, b: list, precision=17):
+    def __init__(self, a: array, b: list, precision=9, table=None):
         self.a = a  # coefficients matrix
         self.b = b  # constants matrix
         self.precision = precision
         self.tol = 10 ** -self.precision
+        self.table = table
+        self.start_row = 0
 
     def gauss_elimination(self):
         flag = self.forward_elimination()
@@ -29,6 +33,7 @@ class LinearSolver:
                 for k in range(len(self.a)):
                     self.a[j][k] = self.a[j][k] - self.round_to_significant_digit(factor * self.a[i][k])
                 self.b[j] = self.b[j] - self.round_to_significant_digit(factor * self.b[i])
+            self.add_to_table()
         return 0
 
     def gauss_jordan_elimination(self):
@@ -40,12 +45,15 @@ class LinearSolver:
             for j in range(len(self.a)):
                 self.a[i][j] = self.round_to_significant_digit(self.a[i][j] / scale)
             self.b[i] = self.round_to_significant_digit(self.b[i] / scale)
+            self.add_to_table()
             for j in range(len(self.a)):
                 if i != j:
                     factor = self.a[j][i] / self.a[i][i]
                     for k in range(len(self.a)):
                         self.a[j][k] = self.a[j][k] - self.round_to_significant_digit(factor * self.a[i][k])
-                    self.b[j] = self.round_to_significant_digit(self.b[j] - self.round_to_significant_digit(factor * self.b[i]))
+                    self.b[j] = self.round_to_significant_digit(
+                        self.b[j] - self.round_to_significant_digit(factor * self.b[i]))
+            self.add_to_table()
         return self.b
 
     def backward_substitution(self):
@@ -53,7 +61,8 @@ class LinearSolver:
         for i in range(len(self.a) - 1, -1, -1):
             x[i] = self.round_to_significant_digit(self.b[i] / self.a[i][i])
             for j in range(i - 1, -1, -1):
-                self.b[j] = self.round_to_significant_digit(self.b[j] - self.round_to_significant_digit(self.a[j][i] * x[i]))
+                self.b[j] = self.round_to_significant_digit(
+                    self.b[j] - self.round_to_significant_digit(self.a[j][i] * x[i]))
         return x
 
     def partial_pivoting(self, current_row):
@@ -227,3 +236,24 @@ class LinearSolver:
         else:
             x = round(num, -int(math.floor(math.log10(abs(num)))) + (self.precision - 1))
             return x
+
+    def add_to_table(self):
+        counter = len(self.a)
+        self.table.setColumnCount(counter + 2)
+        column_headers = [f"X{i}" for i in range(counter)]
+        column_headers.append(" ")
+        column_headers.append("b")
+        self.table.setHorizontalHeaderLabels(column_headers)
+        for i in range(counter):
+            self.table.insertRow(i + self.start_row)
+            for j in range(counter):
+                self.table.setItem(i + self.start_row, j, QtWidgets.QTableWidgetItem(str(self.a[i][j])))
+                self.table.setColumnWidth(j, 170)
+            self.table.setItem(i + self.start_row, counter, QtWidgets.QTableWidgetItem(str("|")))
+            self.table.setColumnWidth(counter, 170)
+            self.table.setItem(i + self.start_row, counter + 1, QtWidgets.QTableWidgetItem(str(self.b[i])))
+            self.table.setColumnWidth(counter + 1, 170)
+        self.table.insertRow(counter + self.start_row)
+        for i in range(counter+2):
+            self.table.setItem(counter + self.start_row, i, QtWidgets.QTableWidgetItem(str("-----------------------")))
+        self.start_row = counter + self.start_row + 1

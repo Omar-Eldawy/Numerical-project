@@ -367,9 +367,9 @@ class SolutionWindow(QDialog):
         self.total_time = 0
         self.significantDigits = significantDigits
         if self.operation in direct:
-            self.direct = LinearSolver(self.A, self.b, significantDigits)
+            self.direct = LinearSolver(self.A, self.b, significantDigits, self.tableWidget)
         else:
-            self.indirect = IterativeMethods(self.A, self.b, self.x0, self.tol, self.max_iter, significantDigits)
+            self.indirect = IterativeMethods(self.A, self.b, self.x0, self.tol, self.max_iter, significantDigits, self.tableWidget)
         self.show_answer()
 
     def go_to_previous(self):
@@ -433,7 +433,7 @@ class SolutionWindow(QDialog):
     def toggle_visibility(self):
         self.noSolutionLabel.show()
         self.guessHolder.hide()
-        self.widget_2.hide()
+        # self.widget_2.hide()
         self.label_4.hide()
         self.timerLabel.hide()
 

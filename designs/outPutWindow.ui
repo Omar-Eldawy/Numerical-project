@@ -215,50 +215,16 @@ border-radius:10px;
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-  </widget>
-  <widget class="QWidget" name="widget_2" native="true">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>370</y>
-     <width>851</width>
-     <height>271</height>
-    </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">background-color: rgb(85, 80, 26);
-border-color: rgb(85, 85, 57);
-border:2.2px solid;</string>
-   </property>
-   <layout class="QGridLayout" name="gridLayout_3">
-    <item row="0" column="0">
-     <widget class="QScrollArea" name="equationsArea">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(255, 252, 219);
-border-color: rgb(170, 137, 159);
-border-size: 2px;</string>
-      </property>
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents_2">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>835</width>
-         <height>255</height>
-        </rect>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_5">
-        <item row="0" column="0">
-         <layout class="QGridLayout" name="gridLayout_6"/>
-        </item>
-       </layout>
-      </widget>
-     </widget>
-    </item>
-   </layout>
+   <widget class="QTableWidget" name="tableWidget">
+    <property name="geometry">
+     <rect>
+      <x>15</x>
+      <y>381</y>
+      <width>831</width>
+      <height>241</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
  </widget>
  <resources/>
