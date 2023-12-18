@@ -33,3 +33,11 @@ def round_to_significant_digit(number, digits):
 
 
 print(round_to_significant_digit(1.99943, 3))
+
+
+def check_too_big_number(number):
+    max_float = sys.float_info.max
+    return abs(number) > max_float
+
+s= 1e300 ** 1e400
+print(check_too_big_number(s))

@@ -190,19 +190,26 @@ class InputWindow(QDialog):
         self.store_equations_values()
         self.store_initial_guess_values()
         if self.operation == "Jacobi":
-            jacobi = IterativeMethods(self.equations, self.B, self.initialGuess, self.tolerance, self.maxIteration, self.significantDigits)
+            jacobi = IterativeMethods(self.equations, self.B, self.initialGuess, self.tolerance, self.maxIteration,
+                                      self.significantDigits)
             if jacobi.is_diagonally_dominant():
                 outputWindow = SolutionWindow(self.equations, self.B, self.operation, self.tolerance, self.maxIteration,
                                               self.initialGuess, self.significantDigits)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             else:
-                msg = QMessageBox()
-                msg.setWindowTitle("Error")
-                msg.setText("The matrix is not diagonally dominant")
-                msg.setIcon(QMessageBox.Icon.Critical)
-                msg.exec()
-
+                msg = QMessageBox().question(self, "Warning",
+                                             "The matrix is not diagonally dominant do you want to continue ?",
+                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                             QMessageBox.StandardButton.No)
+                if msg == QMessageBox.StandardButton.Yes:
+                    outputWindow = SolutionWindow(self.equations, self.B, self.operation, self.tolerance,
+                                                  self.maxIteration,
+                                                  self.initialGuess, self.significantDigits)
+                    widget.addWidget(outputWindow)
+                    widget.setCurrentIndex(widget.currentIndex() + 1)
+                else:
+                    return
         elif self.operation == "Gauss Seidel":
             gauss_seidel = IterativeMethods(self.equations, self.B, self.initialGuess, self.tolerance,
                                             self.maxIteration, self.significantDigits)
@@ -212,11 +219,16 @@ class InputWindow(QDialog):
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             else:
-                msg = QMessageBox()
-                msg.setWindowTitle("Error")
-                msg.setText("The matrix is not diagonally dominant")
-                msg.setIcon(QMessageBox.Icon.Critical)
-                msg.exec()
+                msg = QMessageBox().question(self, "Warning", "The matrix is not diagonally dominant do you want to continue ?",
+                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+                if msg == QMessageBox.StandardButton.Yes:
+                    outputWindow = SolutionWindow(self.equations, self.B, self.operation, self.tolerance,
+                                                  self.maxIteration,
+                                                  self.initialGuess, self.significantDigits)
+                    widget.addWidget(outputWindow)
+                    widget.setCurrentIndex(widget.currentIndex() + 1)
+                else:
+                    return
         else:
             pass
 
@@ -225,14 +237,18 @@ class InputWindow(QDialog):
         self.B = np.zeros(self.numberOfEquations)
         for i in range(self.numberOfEquations):
             for j in range(self.numberOfEquations):
-                self.equations[i][j] = round_to_significant_digit(self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value(), self.significantDigits)
+                self.equations[i][j] = round_to_significant_digit(
+                    self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value(), self.significantDigits)
         for i in range(self.numberOfEquations):
-            self.B[i] = round_to_significant_digit(self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value(), self.significantDigits)
+            self.B[i] = round_to_significant_digit(
+                self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value(),
+                self.significantDigits)
 
     def store_initial_guess_values(self):
         self.initialGuess = np.zeros(self.numberOfEquations)
         for i in range(self.numberOfEquations):
-            self.initialGuess[i] = round_to_significant_digit(self.gridLayout_4.itemAtPosition(1, i).widget().value(), self.significantDigits)
+            self.initialGuess[i] = round_to_significant_digit(self.gridLayout_4.itemAtPosition(1, i).widget().value(),
+                                                              self.significantDigits)
 
 
 class LinearWindow(QDialog):
@@ -311,20 +327,20 @@ class LinearWindow(QDialog):
             return
         self.store_equations_values()
         if self.operation == "Gauss Jordan":
-            outputWindow = SolutionWindow(self.equations, self.B, self.operation,0, 0, 0, self.significantDigits)
+            outputWindow = SolutionWindow(self.equations, self.B, self.operation, 0, 0, 0, self.significantDigits)
             widget.addWidget(outputWindow)
             widget.setCurrentIndex(widget.currentIndex() + 1)
         elif self.operation == "Gauss Elimination":
-            outputWindow = SolutionWindow(self.equations, self.B, self.operation,0, 0, 0, self.significantDigits)
+            outputWindow = SolutionWindow(self.equations, self.B, self.operation, 0, 0, 0, self.significantDigits)
             widget.addWidget(outputWindow)
             widget.setCurrentIndex(widget.currentIndex() + 1)
         else:
             if self.LU == "Doolittle Form":
-                outputWindow = SolutionWindow(self.equations, self.B, self.LU,0, 0, 0, self.significantDigits)
+                outputWindow = SolutionWindow(self.equations, self.B, self.LU, 0, 0, 0, self.significantDigits)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             elif self.LU == "Crout Form":
-                outputWindow = SolutionWindow(self.equations, self.B, self.LU,0, 0, 0, self.significantDigits)
+                outputWindow = SolutionWindow(self.equations, self.B, self.LU, 0, 0, 0, self.significantDigits)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             else:
@@ -336,7 +352,7 @@ class LinearWindow(QDialog):
                     msg.setIcon(QMessageBox.Icon.Critical)
                     msg.exec()
                     return
-                outputWindow = SolutionWindow(self.equations, self.B, self.LU,0, 0, 0, self.significantDigits)
+                outputWindow = SolutionWindow(self.equations, self.B, self.LU, 0, 0, 0, self.significantDigits)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
 
@@ -345,9 +361,12 @@ class LinearWindow(QDialog):
         self.B = np.zeros(self.numberOfEquations)
         for i in range(self.numberOfEquations):
             for j in range(self.numberOfEquations):
-                self.equations[i][j] = round_to_significant_digit(self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value(), self.significantDigits)
+                self.equations[i][j] = round_to_significant_digit(
+                    self.gridLayout_6.itemAtPosition(i + 1, j + 1).widget().value(), self.significantDigits)
         for i in range(self.numberOfEquations):
-            self.B[i] = round_to_significant_digit(self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value(), self.significantDigits)
+            self.B[i] = round_to_significant_digit(
+                self.gridLayout_6.itemAtPosition(i + 1, self.numberOfEquations + 1).widget().value(),
+                self.significantDigits)
 
 
 class SolutionWindow(QDialog):
@@ -366,10 +385,13 @@ class SolutionWindow(QDialog):
         self.answer = 0
         self.total_time = 0
         self.significantDigits = significantDigits
+        self.flag = 0
+        self.diverge.hide()
         if self.operation in direct:
             self.direct = LinearSolver(self.A, self.b, significantDigits, self.tableWidget)
         else:
-            self.indirect = IterativeMethods(self.A, self.b, self.x0, self.tol, self.max_iter, significantDigits, self.tableWidget)
+            self.indirect = IterativeMethods(self.A, self.b, self.x0, self.tol, self.max_iter, significantDigits,
+                                             self.tableWidget)
         self.show_answer()
 
     def go_to_previous(self):
@@ -391,12 +413,12 @@ class SolutionWindow(QDialog):
             self.total_time = end - start
         elif self.operation == "Jacobi":
             start = time.perf_counter()
-            self.answer = self.indirect.jacobi()
+            self.answer, self.flag = self.indirect.jacobi()
             end = time.perf_counter()
             self.total_time = end - start
         elif self.operation == "Gauss Seidel":
             start = time.perf_counter()
-            self.answer = self.indirect.gauss_seidel()
+            self.answer, self.flag = self.indirect.gauss_seidel()
             end = time.perf_counter()
             self.total_time = end - start
         elif self.operation == "Doolittle Form":
@@ -417,8 +439,10 @@ class SolutionWindow(QDialog):
 
     def show_answer(self):
         self.solve()
-        if isinstance(self.answer, int) and self.answer == -1:
+        if isinstance(self.answer, int) and (self.answer == -1 or self.flag == -1):
             self.toggle_visibility()
+        elif isinstance(self.answer, int) and (self.answer == -2 or self.flag == -2):
+            self.diverge()
         else:
             self.timerLabel.setText(f'Time: {self.total_time:.7f} nano seconds')
             for i in range(len(self.A)):
@@ -436,6 +460,12 @@ class SolutionWindow(QDialog):
         # self.widget_2.hide()
         self.label_4.hide()
         self.timerLabel.hide()
+        self.tableWidget.hide()
+        self.diverge.hide()
+
+    def diverge(self):
+        self.noSolutionLabel.hide()
+        self.diverge.show()
 
 
 class DoubleSpinBox(QDoubleSpinBox):

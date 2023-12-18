@@ -1,5 +1,6 @@
 import copy
 import math
+import sys
 
 import numpy as np
 from PyQt6 import QtWidgets
@@ -31,38 +32,43 @@ class IterativeMethods:
     def jacobi(self):
         if self.is_singular():
             print("Singular matrix")
-            return -1
+            return 0, -1
         x = self.x0
         for k in range(self.max_iter):
             x_new = np.zeros_like(x)
             for i in range(len(x)):
                 s1 = float(np.dot(self.A[i, :i], x[:i]))  # dot product before xi element
                 s2 = float(np.dot(self.A[i, i + 1:], x[i + 1:]))  # dot product after xi element
-                x_new[i] = self.round_to_significant_digit((self.b[i] - s1 - s2) / float(self.A[i, i]))  # calculate the new xi
+                if self.check_too_big_number(s1) or self.check_too_big_number(s2):
+                    return x, -2
+                x_new[i] = self.round_to_significant_digit(
+                    (self.b[i] - s1 - s2) / float(self.A[i, i]))  # calculate the new xi
             eps = np.linalg.norm(x_new - x)
             self.add_to_table(eps, x_new)
             if eps < self.tol:
-                break
+                return x, 0
             x = x_new
-        return x
+        return x, -2
 
     def gauss_seidel(self):
         if self.is_singular():
             print("Singular matrix")
-            return -1
+            return 0, -1
         x = self.x0
         for k in range(self.max_iter):
             x_new = np.zeros_like(x)
             for i in range(len(x)):
                 s1 = np.dot(self.A[i, :i], x_new[:i])
                 s2 = np.dot(self.A[i, i + 1:], x[i + 1:])
+                if self.check_too_big_number(s1) or self.check_too_big_number(s2):
+                    return x, -2
                 x_new[i] = self.round_to_significant_digit((self.b[i] - s1 - s2) / float(self.A[i, i]))
             eps = np.linalg.norm(x_new - x)
             self.add_to_table(eps, x_new)
             if eps < self.tol:
-                break
+                return x, 0
             x = x_new
-        return x
+        return x, -2
 
     def is_singular(self):
         if np.linalg.det(self.A) == 0:
@@ -75,7 +81,7 @@ class IterativeMethods:
             max_vector = np.max(np.abs(self.A[i:, i:]), axis=1)
             after_scaling = array_copy[i:, i] / max_vector
             index_of_max = np.argmax(np.abs(after_scaling))
-            self.A[index_of_max+i], self.A[i] = copy.deepcopy(self.A[i]), copy.deepcopy(self.A[index_of_max+i])
+            self.A[index_of_max + i], self.A[i] = copy.deepcopy(self.A[i]), copy.deepcopy(self.A[index_of_max + i])
             self.b[index_of_max + i], self.b[i] = copy.deepcopy(self.b[i]), copy.deepcopy(self.b[index_of_max + i])
 
     def round_to_significant_digit(self, num):
@@ -98,3 +104,7 @@ class IterativeMethods:
         self.table.setItem(self.table_counter, counter, QtWidgets.QTableWidgetItem(str(epsilon)))
         self.table.setColumnWidth(counter, 170)
         self.table_counter += 1
+
+    def check_too_big_number(self, number):
+        max_float = sys.float_info.max
+        return abs(number) > max_float

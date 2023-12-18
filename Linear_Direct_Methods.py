@@ -7,6 +7,7 @@ from PyQt6 import QtWidgets
 from numpy import array
 from PyQt6.QtWidgets import QApplication, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
+
 class LinearSolver:
     def __init__(self, a: array, b: list, precision=9, table=None):
         self.a = a  # coefficients matrix
@@ -254,6 +255,6 @@ class LinearSolver:
             self.table.setItem(i + self.start_row, counter + 1, QtWidgets.QTableWidgetItem(str(self.b[i])))
             self.table.setColumnWidth(counter + 1, 170)
         self.table.insertRow(counter + self.start_row)
-        for i in range(counter+2):
+        for i in range(counter + 2):
             self.table.setItem(counter + self.start_row, i, QtWidgets.QTableWidgetItem(str("-----------------------")))
         self.start_row = counter + self.start_row + 1
