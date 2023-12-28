@@ -2,7 +2,9 @@ import math
 import sys
 import time
 
+import mplcursors
 import numpy as np
+import sympy.core.numbers
 
 from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtCore import Qt
@@ -11,14 +13,23 @@ from PyQt6.QtGui import QCursor, QIcon
 from PyQt6.QtWidgets import QDialog, QApplication, QWidget, QDoubleSpinBox, QGridLayout, QLabel, QMessageBox
 from PyQt6.uic import loadUi
 from PySide6.QtWidgets import QScrollArea
+from numpy import isreal
+from sympy import sympify, symbols, I, oo, log, exp, sin, SympifyError, Function, solve, sqrt, cos, tan, Interval, \
+    solve_univariate_inequality
 
+import matplotlib
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+
+from Bracketing_Methods import BracketingMethods
 from Linear_Direct_Methods import LinearSolver
 from Linear_Iterative_Methods import IterativeMethods
+from Open_Methods import OpenMethods
+
+matplotlib.use("QtAgg")
 
 
-# def round_to_significant_digit(number, digits):
-#     rounded_number = np.around(number, digits - int(np.floor(np.log10(abs(number)))) - 1)
-#     return rounded_number
 def round_to_significant_digit(num, significant):
     if num == 0:
         return 0
@@ -37,11 +48,9 @@ class HomePage(QDialog):
         self.exitButton.clicked.connect(self.exitProgram)
 
     def goToNonLinear(self):
-        msg = QMessageBox()
-        msg.setWindowTitle("Phase 2")
-        msg.setText("Coming Soon :)")
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.exec()
+        nonlinearPage = NonLinearOptions()
+        widget.addWidget(nonlinearPage)
+        widget.setCurrentIndex(widget.currentIndex() + 1)
 
     def goToLinear(self):
         linearPage = LinearOptions()
@@ -219,8 +228,10 @@ class InputWindow(QDialog):
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
             else:
-                msg = QMessageBox().question(self, "Warning", "The matrix is not diagonally dominant do you want to continue ?",
-                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+                msg = QMessageBox().question(self, "Warning",
+                                             "The matrix is not diagonally dominant do you want to continue ?",
+                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                             QMessageBox.StandardButton.No)
                 if msg == QMessageBox.StandardButton.Yes:
                     outputWindow = SolutionWindow(self.equations, self.B, self.operation, self.tolerance,
                                                   self.maxIteration,
@@ -524,6 +535,463 @@ class Label(QLabel):
                                  "color: #652173;"
                                  "border: 1.3px solid ;"
                                  "border-radius: 5px;")
+
+
+class NonLinearOptions(QDialog):
+    def __init__(self):
+        super(NonLinearOptions, self).__init__()
+        loadUi("designs/nonlinearMethodsWindow.ui", self)
+        self.previousButton.clicked.connect(self.go_to_previous)
+        self.BisectionButton.clicked.connect(self.go_to_bisection)
+        self.FalsePositionButton.clicked.connect(self.go_to_false_position)
+        self.FixedPointButton.clicked.connect(self.go_to_fixed_point)
+        self.OriginalNewtonButton.clicked.connect(self.go_to_newton_raphson)
+        self.ModifiedNewtonButton.clicked.connect(self.go_to_modified_newton)
+        self.SecantButton.clicked.connect(self.go_to_secant)
+
+    def go_to_previous(self):
+        currentIndex = widget.currentIndex()
+        widgetToRemove = widget.currentWidget()
+        widget.removeWidget(widgetToRemove)
+        widget.setCurrentIndex(currentIndex - 1)
+
+    def go_to_bisection(self):
+        inputWindow = BracketingInput("Bisection")
+        widget.addWidget(inputWindow)
+        widget.setCurrentIndex(widget.currentIndex() + 1)
+
+    def go_to_false_position(self):
+        inputWindow = BracketingInput("False Position")
+        widget.addWidget(inputWindow)
+        widget.setCurrentIndex(widget.currentIndex() + 1)
+
+    def go_to_fixed_point(self):
+        inputWindow = OpenMethodsInput("Fixed Point")
+        widget.addWidget(inputWindow)
+        widget.setCurrentIndex(widget.currentIndex() + 1)
+
+    def go_to_newton_raphson(self):
+        inputWindow = OpenMethodsInput("Newton Raphson 1")
+        widget.addWidget(inputWindow)
+        widget.setCurrentIndex(widget.currentIndex() + 1)
+
+    def go_to_modified_newton(self):
+        inputWindow = OpenMethodsInput("Newton Raphson 2")
+        widget.addWidget(inputWindow)
+        widget.setCurrentIndex(widget.currentIndex() + 1)
+
+    def go_to_secant(self):
+        inputWindow = OpenMethodsInput("Secant")
+        widget.addWidget(inputWindow)
+        widget.setCurrentIndex(widget.currentIndex() + 1)
+
+
+class BracketingInput(QDialog):
+    def __init__(self, method):
+        super(BracketingInput, self).__init__()
+        loadUi("designs/inputWindowBracketing.ui", self)
+        self.method = method
+        self.previousButton.clicked.connect(self.go_to_previous)
+        self.solveButton.clicked.connect(self.solve)
+        self.ApplyButton.clicked.connect(self.apply)
+        self.editButton.clicked.connect(self.before_function_applied)
+        self.toleranceInput.valueChanged.connect(self.set_tolerance)
+        self.maxIterationsInput.valueChanged.connect(self.set_max_iteration)
+        self.XlInput.valueChanged.connect(self.set_xl)
+        self.XuInput.valueChanged.connect(self.set_xu)
+        self.pricesionInput.valueChanged.connect(self.set_significant)
+        self.symbol = symbols('x')
+        self.canva = MyCanvas()
+        self.graphArea.addWidget(self.canva)
+        self.toolbar = NavigationToolbar(self.canva, self)
+        self.toolBarArea.addWidget(self.toolbar, 0, 0)
+        self.upperRangeInput.valueChanged.connect(self.set_upper_range)
+        self.lowerRangeInput.valueChanged.connect(self.set_lower_range)
+        self.updateGraphButton.clicked.connect(self.update_graph)
+        self.tolerance = 0.0001
+        self.maxIteration = 100
+        self.xl = -10.0
+        self.xu = 10.0
+        self.significantDigits = 16
+        self.expression = None
+        self.lowerRange = -100
+        self.upperRange = 100
+        self.before_function_applied()
+
+    def go_to_previous(self):
+        currentIndex = widget.currentIndex()
+        widgetToRemove = widget.currentWidget()
+        widget.removeWidget(widgetToRemove)
+        widget.setCurrentIndex(currentIndex - 1)
+
+    def set_tolerance(self, x):
+        self.tolerance = x
+
+    def set_max_iteration(self, x):
+        self.maxIteration = x
+
+    def set_xl(self, x):
+        self.xl = x
+
+    def set_xu(self, x):
+        self.xu = x
+
+    def set_significant(self, x):
+        self.significantDigits = x
+
+    def set_upper_range(self, x):
+        self.upperRange = x
+
+    def set_lower_range(self, x):
+        self.lowerRange = x
+
+    def solve(self):
+        if self.valid_interval():
+            outputWindow = NonlinearOutputWindow(self.method, self.expression, self.tolerance, self.maxIteration,
+                                                 self.significantDigits, self.xl, self.xu)
+            widget.addWidget(outputWindow)
+            widget.setCurrentIndex(widget.currentIndex() + 1)
+        else:
+            return
+
+    def valid_interval(self):
+        try:
+            fl = self.expression.subs(self.symbol, self.xl).evalf()
+            fu = self.expression.subs(self.symbol, self.xu).evalf()
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText("Invalid interval")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.exec()
+            return False
+        if not self.is_real(fl) or not self.is_real(fu) or fl * fu > 0:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText("Invalid interval")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.exec()
+            return False
+        else:
+            return True
+
+    def is_real(self, number):
+        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number, sympy.core.numbers.Integer)
+        return flag1
+
+    def before_function_applied(self):
+        self.afterFunction.hide()
+        self.solveButton.hide()
+        self.editButton.hide()
+        self.lineEdit.setEnabled(True)
+        self.lowerRange = -100
+        self.upperRange = 100
+        self.lowerRangeInput.setValue(self.lowerRange)
+        self.upperRangeInput.setValue(self.upperRange)
+        self.canva.axes.cla()
+        self.canva.draw()
+        self.ApplyButton.show()
+
+    def apply(self):
+        if self.valid_expression():
+            self.afterFunction.show()
+            self.solveButton.show()
+            self.editButton.show()
+            self.ApplyButton.hide()
+            self.lineEdit.setEnabled(False)
+        else:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText("Please enter a valid expression")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.exec()
+
+    def generate_data(self, numberOfPoints):
+        my_function = lambda x: float(self.expression.subs(self.symbol, x).evalf())
+        x_axis = np.linspace(self.lowerRange, self.upperRange, numberOfPoints)
+        try:
+            y_axis = np.array([my_function(x) for x in x_axis])
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText("Please enter a valid range")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.exec()
+            return None, None
+        return x_axis, y_axis
+
+    def update_graph(self):
+        x_axis, y_axis = self.generate_data(200)
+        if x_axis is None:
+            return
+        self.canva.axes.cla()
+        self.canva.plot_data(x_axis, y_axis, self.lineEdit.text())
+
+    def valid_expression(self):
+        try:
+            test_expression = self.lineEdit.text()
+            allowed_variables = set('x')
+            expression_symbols = sympify(test_expression).free_symbols
+            for symbol in expression_symbols:
+                if str(symbol) not in allowed_variables and not isinstance(symbol, Function):
+                    return False
+            self.expression = sympify(test_expression)
+            return True
+        except Exception as e:
+            return False
+
+
+class OpenMethodsInput(QDialog):
+    def __init__(self, method):
+        super(OpenMethodsInput, self).__init__()
+        loadUi("designs/inputWindowOpenMethods.ui", self)
+        self.previousButton.clicked.connect(self.go_to_previous)
+        self.solveButton.clicked.connect(self.solve)
+        self.toleranceInput.valueChanged.connect(self.set_tolerance)
+        self.maxIterationsInput.valueChanged.connect(self.set_max_iteration)
+        self.editButton.clicked.connect(self.before_function_applied)
+        self.pricesionInput.valueChanged.connect(self.set_significant)
+        self.ApplyButton.clicked.connect(self.apply)
+        self.upperRangeInput.valueChanged.connect(self.set_upper_range)
+        self.lowerRangeInput.valueChanged.connect(self.set_lower_range)
+        self.symbol = symbols('x')
+        self.canva = MyCanvas()
+        self.graphArea.addWidget(self.canva)
+        self.toolbar = NavigationToolbar(self.canva, self)
+        self.toolBarArea.addWidget(self.toolbar, 0, 0)
+        self.X0Input.valueChanged.connect(self.set_x0)
+        self.X1Input.valueChanged.connect(self.set_x1)
+        self.mInput.valueChanged.connect(self.set_m)
+        self.updateGraphButton.clicked.connect(self.update_graph)
+        self.method = method
+        self.tolerance = 0.0001
+        self.maxIteration = 100
+        self.x0 = 10.0
+        self.x1 = -10.0
+        self.m = 1
+        self.significantDigits = 16
+        self.expression = None
+        self.lowerRange = -100
+        self.upperRange = 100
+        self.arrange_window_on_method()
+        self.before_function_applied()
+
+    def go_to_previous(self):
+        currentIndex = widget.currentIndex()
+        widgetToRemove = widget.currentWidget()
+        widget.removeWidget(widgetToRemove)
+        widget.setCurrentIndex(currentIndex - 1)
+
+    def set_tolerance(self, x):
+        self.tolerance = x
+
+    def set_max_iteration(self, x):
+        self.maxIteration = x
+
+    def set_x0(self, x):
+        self.x0 = x
+
+    def set_x1(self, x):
+        self.x1 = x
+
+    def set_significant(self, x):
+        self.significantDigits = x
+
+    def set_upper_range(self, x):
+        self.upperRange = x
+
+    def set_lower_range(self, x):
+        self.lowerRange = x
+
+    def set_m(self, x):
+        self.m = x
+
+    def arrange_window_on_method(self):
+        if self.method == "Secant":
+            self.mLabel.hide()
+            self.mInput.hide()
+        elif self.method == "Newton Raphson 1":
+            self.x1Label.hide()
+            self.X1Input.hide()
+        elif self.method == "Newton Raphson 2" or self.method == "Fixed Point":
+            self.mLabel.hide()
+            self.mInput.hide()
+            self.x1Label.hide()
+            self.X1Input.hide()
+        else:
+            return
+
+    def before_function_applied(self):
+        self.afterFunction.hide()
+        self.solveButton.hide()
+        self.editButton.hide()
+        self.lineEdit.setEnabled(True)
+        self.lowerRange = -100
+        self.upperRange = 100
+        self.lowerRangeInput.setValue(self.lowerRange)
+        self.upperRangeInput.setValue(self.upperRange)
+        self.canva.axes.cla()
+        self.canva.draw()
+        self.ApplyButton.show()
+
+    def valid_expression(self):
+        try:
+            test_expression = self.lineEdit.text()
+            allowed_variables = set('x')
+            expression_symbols = sympify(test_expression).free_symbols
+            for symbol in expression_symbols:
+                if str(symbol) not in allowed_variables and not isinstance(symbol, Function):
+                    return False
+            self.expression = sympify(test_expression)
+            return True
+        except Exception as e:
+            return False
+
+    def apply(self):
+        if self.valid_expression():
+            self.afterFunction.show()
+            self.solveButton.show()
+            self.editButton.show()
+            self.ApplyButton.hide()
+            self.lineEdit.setEnabled(False)
+        else:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText("Please enter a valid expression")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.exec()
+
+    def update_graph(self):
+        x_axis, y_axis = self.generate_data(200)
+        if x_axis is None:
+            return
+        self.canva.axes.cla()
+        self.canva.plot_data(x_axis, y_axis, self.lineEdit.text(), self.method)
+
+    def generate_data(self, numberOfPoints):
+        my_function = lambda x: float(self.expression.subs(self.symbol, x).evalf())
+        x_axis = np.linspace(self.lowerRange, self.upperRange, numberOfPoints)
+        try:
+            y_axis = np.array([my_function(x) for x in x_axis])
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText("Please enter a valid range")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.exec()
+            return None, None
+        return x_axis, y_axis
+
+    def solve(self):
+        if self.method == "Fixed Point":
+            first_derivative = self.expression.diff(self.symbol)
+            derivative = first_derivative.subs(self.symbol, self.x0).evalf()
+            if abs(derivative) >= 1:
+                msg = QMessageBox().question(self, "Warning",
+                                             "There is no guaranty the method will converge, do you want to continue ?",
+                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                             QMessageBox.StandardButton.No)
+                if msg == QMessageBox.StandardButton.Yes:
+                    outputWindow = NonlinearOutputWindow(self.method, self.expression, self.tolerance,
+                                                         self.maxIteration,
+                                                         self.significantDigits, self.x0, self.x1, self.m)
+                    widget.addWidget(outputWindow)
+                    widget.setCurrentIndex(widget.currentIndex() + 1)
+            else:
+                outputWindow = NonlinearOutputWindow(self.method, self.expression, self.tolerance,
+                                                     self.maxIteration,
+                                                     self.significantDigits, self.x0, self.x1, self.m)
+                widget.addWidget(outputWindow)
+                widget.setCurrentIndex(widget.currentIndex() + 1)
+
+        else:
+            outputWindow = NonlinearOutputWindow(self.method, self.expression, self.tolerance, self.maxIteration,
+                                                 self.significantDigits, self.x0, self.x1, self.m)
+            widget.addWidget(outputWindow)
+            widget.setCurrentIndex(widget.currentIndex() + 1)
+
+
+class MyCanvas(FigureCanvasQTAgg):
+    def __init__(self, parent=None, width=0.3, height=0.3, dpi=70):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+        super().__init__(self.fig)
+
+    def plot_data(self, x, y, function='y', method=None):
+        self.axes.plot(x, y, label="y = " + function)
+        if method == "Fixed Point":
+            self.axes.plot(x, x, label="y = x")
+        self.axes.set_xlabel("x")
+        self.axes.set_ylabel("y")
+        self.axes.set_title(function)
+        self.axes.legend()
+        self.axes.grid(True)
+        mplcursors.cursor(hover=True)
+        self.draw()
+
+
+class NonlinearOutputWindow(QDialog):
+    def __init__(self, method, function, tolerance, max_iterations, precision, xl, xu=-10.0, m=1):
+        super(NonlinearOutputWindow, self).__init__()
+        loadUi("designs/nonlinearOutPutWindow.ui", self)
+        self.method = method
+        self.time = 0
+        self.previousButton.clicked.connect(self.go_to_previous)
+        bracketingMethods = ["Bisection", "False Position"]
+        if method in bracketingMethods:
+            self.bracketing = BracketingMethods(self.tableWidget, function, xl, xu, tolerance, max_iterations, precision)
+        else:
+            self.open = OpenMethods(self.tableWidget, function, tolerance, max_iterations, precision, xl, xu, m)
+        self.flag = self.solve()
+        if self.flag is None:
+            self.outputLabel.setText("The method diverged")
+        else:
+            self.outputLabel.setText("The root value is equal to " + str(self.flag))
+        self.timerLabel.setText(f'Time: {self.time:.7f} nano seconds')
+
+    def go_to_previous(self):
+        currentIndex = widget.currentIndex()
+        widgetToRemove = widget.currentWidget()
+        widget.removeWidget(widgetToRemove)
+        widget.setCurrentIndex(currentIndex - 1)
+
+    def solve(self):
+        if self.method == "Bisection":
+            start = time.perf_counter()
+            answer = self.bracketing.bisection()
+            end = time.perf_counter()
+            self.time = end - start
+            return answer
+        elif self.method == "False Position":
+            start = time.perf_counter()
+            answer = self.bracketing.false_position()
+            end = time.perf_counter()
+            self.time = end - start
+            return answer
+        elif self.method == "Fixed Point":
+            start = time.perf_counter()
+            answer = self.open.fixed_point()
+            end = time.perf_counter()
+            self.time = end - start
+            return answer
+        elif self.method == "Newton Raphson 1":
+            start = time.perf_counter()
+            answer = self.open.newton_raphson_1()
+            end = time.perf_counter()
+            self.time = end - start
+            return answer
+        elif self.method == "Newton Raphson 2":
+            start = time.perf_counter()
+            answer = self.open.newton_raphson_2()
+            end = time.perf_counter()
+            self.time = end - start
+            return answer
+        else:
+            start = time.perf_counter()
+            answer = self.open.secant()
+            end = time.perf_counter()
+            self.time = end - start
+            return answer
 
 
 if __name__ == "__main__":
