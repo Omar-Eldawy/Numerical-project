@@ -169,7 +169,7 @@ QLineEdit:focus{
 }</string>
     </property>
     <property name="placeholderText">
-     <string>example: x+exp**(log(sin(5x))-x**(sin(10x))</string>
+     <string>example: x+exp(1)**(log(sin(5x))-x**(sin(10x))</string>
     </property>
    </widget>
    <widget class="QPushButton" name="ApplyButton">

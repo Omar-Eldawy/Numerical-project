@@ -15,7 +15,7 @@ from PyQt6.uic import loadUi
 from PySide6.QtWidgets import QScrollArea
 from numpy import isreal
 from sympy import sympify, symbols, I, oo, log, exp, sin, SympifyError, Function, solve, sqrt, cos, tan, Interval, \
-    solve_univariate_inequality
+    solve_univariate_inequality, Pow
 
 import matplotlib
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
@@ -936,15 +936,18 @@ class NonlinearOutputWindow(QDialog):
         loadUi("designs/nonlinearOutPutWindow.ui", self)
         self.method = method
         self.time = 0
+        self.oscilating = False
         self.previousButton.clicked.connect(self.go_to_previous)
         bracketingMethods = ["Bisection", "False Position"]
         if method in bracketingMethods:
             self.bracketing = BracketingMethods(self.tableWidget, function, xl, xu, tolerance, max_iterations, precision)
         else:
             self.open = OpenMethods(self.tableWidget, function, tolerance, max_iterations, precision, xl, xu, m)
-        self.flag = self.solve()
+        self.flag, self.oscillating = self.solve()
         if self.flag is None:
             self.outputLabel.setText("The method diverged")
+        elif self.oscillating:
+            self.outputLabel.setText(f'The method is oscillating around {self.flag[0]} and {self.flag[1]}')
         else:
             self.outputLabel.setText("The root value is equal to " + str(self.flag))
         self.timerLabel.setText(f'Time: {self.time:.7f} nano seconds')
