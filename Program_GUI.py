@@ -15,7 +15,7 @@ from PyQt6.uic import loadUi
 from PySide6.QtWidgets import QScrollArea
 from numpy import isreal
 from sympy import sympify, symbols, I, oo, log, exp, sin, SympifyError, Function, solve, sqrt, cos, tan, Interval, \
-    solve_univariate_inequality, Pow
+    solve_univariate_inequality, Pow, real_root
 
 import matplotlib
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
@@ -676,7 +676,9 @@ class BracketingInput(QDialog):
             return True
 
     def is_real(self, number):
-        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number, sympy.core.numbers.Integer)
+        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number,
+                                                                           sympy.core.numbers.Integer) or isinstance(
+            number, float) or isinstance(number, int)
         return flag1
 
     def before_function_applied(self):
@@ -721,7 +723,7 @@ class BracketingInput(QDialog):
         return x_axis, y_axis
 
     def update_graph(self):
-        x_axis, y_axis = self.generate_data(200)
+        x_axis, y_axis = self.generate_data(1000)
         if x_axis is None:
             return
         self.canva.axes.cla()
@@ -736,9 +738,15 @@ class BracketingInput(QDialog):
                 if str(symbol) not in allowed_variables and not isinstance(symbol, Function):
                     return False
             self.expression = sympify(test_expression)
+            self.handle_power()
             return True
         except Exception as e:
             return False
+
+    def handle_power(self):
+        for expr in sympy.preorder_traversal(self.expression):
+            if isinstance(expr, Pow):
+                self.expression = self.expression.replace(expr, real_root(expr.base, 1 / expr.exp))
 
 
 class OpenMethodsInput(QDialog):
@@ -773,6 +781,7 @@ class OpenMethodsInput(QDialog):
         self.expression = None
         self.lowerRange = -100
         self.upperRange = 100
+        self.tempExpression = None
         self.arrange_window_on_method()
         self.before_function_applied()
 
@@ -843,6 +852,8 @@ class OpenMethodsInput(QDialog):
                 if str(symbol) not in allowed_variables and not isinstance(symbol, Function):
                     return False
             self.expression = sympify(test_expression)
+            self.tempExpression = self.expression
+            self.handle_power()
             return True
         except Exception as e:
             return False
@@ -862,7 +873,7 @@ class OpenMethodsInput(QDialog):
             msg.exec()
 
     def update_graph(self):
-        x_axis, y_axis = self.generate_data(200)
+        x_axis, y_axis = self.generate_data(1000)
         if x_axis is None:
             return
         self.canva.axes.cla()
@@ -882,10 +893,22 @@ class OpenMethodsInput(QDialog):
             return None, None
         return x_axis, y_axis
 
+    def handle_power(self, temp=None):
+        if temp is None:
+            for expr in sympy.preorder_traversal(self.expression):
+                if isinstance(expr, Pow):
+                    self.expression = self.expression.replace(expr, real_root(expr.base, 1 / expr.exp))
+        else:
+            for expr in sympy.preorder_traversal(self.tempExpression):
+                if isinstance(expr, Pow):
+                    temp = temp.replace(expr, real_root(expr.base, 1 / expr.exp))
+            return temp
+
     def solve(self):
         if self.valid_interval():
             if self.method == "Fixed Point":
-                first_derivative = self.expression.diff(self.symbol)
+                first_derivative = self.tempExpression.diff(self.symbol)
+                first_derivative = self.handle_power(first_derivative)
                 derivative = first_derivative.subs(self.symbol, self.x0).evalf()
                 if abs(derivative) >= 1:
                     msg = QMessageBox().question(self, "Warning",
@@ -912,6 +935,7 @@ class OpenMethodsInput(QDialog):
                 widget.setCurrentIndex(widget.currentIndex() + 1)
         else:
             return
+
     def valid_interval(self):
         try:
             fl = self.expression.subs(self.symbol, self.x0).evalf()
@@ -947,8 +971,11 @@ class OpenMethodsInput(QDialog):
                 return True
 
     def is_real(self, number):
-        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number, sympy.core.numbers.Integer)
+        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number,
+                                                                           sympy.core.numbers.Integer) or isinstance(
+            number, float) or isinstance(number, int)
         return flag1
+
 
 class MyCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=0.3, height=0.3, dpi=70):

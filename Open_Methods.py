@@ -245,7 +245,7 @@ class OpenMethods:
             return x
 
     def is_real(self, number):
-        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number, sympy.core.numbers.Integer)
+        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number, sympy.core.numbers.Integer) or isinstance(number, float) or isinstance(number, int)
         return flag1
 
     def add_to_table(self, method, data):
