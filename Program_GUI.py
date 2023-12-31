@@ -883,33 +883,72 @@ class OpenMethodsInput(QDialog):
         return x_axis, y_axis
 
     def solve(self):
-        if self.method == "Fixed Point":
-            first_derivative = self.expression.diff(self.symbol)
-            derivative = first_derivative.subs(self.symbol, self.x0).evalf()
-            if abs(derivative) >= 1:
-                msg = QMessageBox().question(self, "Warning",
-                                             "There is no guaranty the method will converge, do you want to continue ?",
-                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                             QMessageBox.StandardButton.No)
-                if msg == QMessageBox.StandardButton.Yes:
+        if self.valid_interval():
+            if self.method == "Fixed Point":
+                first_derivative = self.expression.diff(self.symbol)
+                derivative = first_derivative.subs(self.symbol, self.x0).evalf()
+                if abs(derivative) >= 1:
+                    msg = QMessageBox().question(self, "Warning",
+                                                 "There is no guaranty the method will converge, do you want to continue ?",
+                                                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                                 QMessageBox.StandardButton.No)
+                    if msg == QMessageBox.StandardButton.Yes:
+                        outputWindow = NonlinearOutputWindow(self.method, self.expression, self.tolerance,
+                                                             self.maxIteration,
+                                                             self.significantDigits, self.x0, self.x1, self.m)
+                        widget.addWidget(outputWindow)
+                        widget.setCurrentIndex(widget.currentIndex() + 1)
+                else:
                     outputWindow = NonlinearOutputWindow(self.method, self.expression, self.tolerance,
                                                          self.maxIteration,
                                                          self.significantDigits, self.x0, self.x1, self.m)
                     widget.addWidget(outputWindow)
                     widget.setCurrentIndex(widget.currentIndex() + 1)
+
             else:
-                outputWindow = NonlinearOutputWindow(self.method, self.expression, self.tolerance,
-                                                     self.maxIteration,
+                outputWindow = NonlinearOutputWindow(self.method, self.expression, self.tolerance, self.maxIteration,
                                                      self.significantDigits, self.x0, self.x1, self.m)
                 widget.addWidget(outputWindow)
                 widget.setCurrentIndex(widget.currentIndex() + 1)
-
         else:
-            outputWindow = NonlinearOutputWindow(self.method, self.expression, self.tolerance, self.maxIteration,
-                                                 self.significantDigits, self.x0, self.x1, self.m)
-            widget.addWidget(outputWindow)
-            widget.setCurrentIndex(widget.currentIndex() + 1)
+            return
+    def valid_interval(self):
+        try:
+            fl = self.expression.subs(self.symbol, self.x0).evalf()
+            fu = 0.0
+            if self.method == "Secant":
+                fu = self.expression.subs(self.symbol, self.x1).evalf()
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText("Invalid interval")
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.exec()
+            return False
+        if self.method == "Secant":
+            if not self.is_real(fl) or not self.is_real(fu):
+                msg = QMessageBox()
+                msg.setWindowTitle("Error")
+                msg.setText("Invalid interval")
+                msg.setIcon(QMessageBox.Icon.Critical)
+                msg.exec()
+                return False
+            else:
+                return True
+        else:
+            if not self.is_real(fl):
+                msg = QMessageBox()
+                msg.setWindowTitle("Error")
+                msg.setText("Invalid interval")
+                msg.setIcon(QMessageBox.Icon.Critical)
+                msg.exec()
+                return False
+            else:
+                return True
 
+    def is_real(self, number):
+        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number, sympy.core.numbers.Integer)
+        return flag1
 
 class MyCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=0.3, height=0.3, dpi=70):
@@ -940,7 +979,8 @@ class NonlinearOutputWindow(QDialog):
         self.previousButton.clicked.connect(self.go_to_previous)
         bracketingMethods = ["Bisection", "False Position"]
         if method in bracketingMethods:
-            self.bracketing = BracketingMethods(self.tableWidget, function, xl, xu, tolerance, max_iterations, precision)
+            self.bracketing = BracketingMethods(self.tableWidget, function, xl, xu, tolerance, max_iterations,
+                                                precision)
         else:
             self.open = OpenMethods(self.tableWidget, function, tolerance, max_iterations, precision, xl, xu, m)
         self.flag, self.oscillating = self.solve()
