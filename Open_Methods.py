@@ -40,14 +40,14 @@ class OpenMethods:
                 print("Zero division error")
                 data.append("Infinity")
                 self.add_to_table("Secant", data)
-                return None, False
+                return None, False, i + 1
             if self.is_real(x2):
                 if x2 == 0:
                     if zero_flag:
                         print("Root found at: ", x2, " number of iterations: ", i + 1)
                         data.append(0.0)
                         self.add_to_table("Secant", data)
-                        return x2, False
+                        return x2, False, i + 1
                     zero_flag = True
                     ea = float('inf')
                 else:
@@ -57,25 +57,25 @@ class OpenMethods:
                     if self.oscillating[i % 2] - x1 == 0.0:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Newton Raphson 1", data)
-                        return self.oscillating, True
+                        return self.oscillating, True, i + 1
                     self.oscillating[i % 2] = x1
                     if ea < self.tolerance:
                         print("Root found at: ", x2, " number of iterations: ", i + 1)
                         self.add_to_table("Secant", data)
-                        return x2, False
+                        return x2, False, i + 1
                     if (ea >= 90 and i >= 10) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
                         print("diverged")
                         self.add_to_table("Secant", data)
-                        return None, False
+                        return None, False, i + 1
                 self.add_to_table("Secant", data)
                 x0 = x1
                 x1 = x2
             else:
                 print("diverged")
                 self.add_to_table("Secant", data)
-                return None, False
+                return None, False, i + 1
         print("max iterations reached, root is: ", x2)
-        return None, False
+        return None, False, self.max_iterations
 
     def newton_raphson_1(self):
         x0 = self.round_to_significant_digit(self.x0)
@@ -95,14 +95,14 @@ class OpenMethods:
                 print("Zero division error")
                 data.append("Infinity")
                 self.add_to_table("Newton Raphson 1", data)
-                return None, False
+                return None, False, i+1
             if self.is_real(x1):
                 if x1 == 0:
                     if zero_flag:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         data.append(0.0)
                         self.add_to_table("Newton Raphson 1", data)
-                        return x1, False
+                        return x1, False, i + 1
                     zero_flag = True
                     ea = float('inf')
                 else:
@@ -112,23 +112,23 @@ class OpenMethods:
                     if self.oscillating[i % 2] - x1 == 0.0:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Newton Raphson 1", data)
-                        return self.oscillating, True
+                        return self.oscillating, True, i + 1
                     self.oscillating[i % 2] = x1
                     if ea < self.tolerance:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Newton Raphson 1", data)
-                        return x1, False
+                        return x1, False, i + 1
                     if (ea >= 90 and i >= 10) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
                         print("diverged")
                         self.add_to_table("Newton Raphson 1", data)
-                        return None, False
+                        return None, False, i + 1
                 self.add_to_table("Newton Raphson 1", data)
                 x0 = x1
             else:
                 print("diverged")
                 self.add_to_table("Newton Raphson 1", data)
-                return None, False
-        return None, False
+                return None, False, i + 1
+        return None, False, self.max_iterations
 
     def newton_raphson_2(self):
         x0 = self.round_to_significant_digit(self.x0)
@@ -153,14 +153,14 @@ class OpenMethods:
                 print("Zero division error")
                 data.append("Infinity")
                 self.add_to_table("Newton Raphson 2", data)
-                return None, False
+                return None, False, i + 1
             if self.is_real(x1):
                 if x1 == 0:
                     if zero_flag:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         data.append(0.0)
                         self.add_to_table("Newton Raphson 2", data)
-                        return x1, False
+                        return x1, False, i + 1
                     zero_flag = True
                     ea = float('inf')
                 else:
@@ -170,23 +170,23 @@ class OpenMethods:
                     if self.oscillating[i % 2] - x1 == 0.0:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Newton Raphson 1", data)
-                        return self.oscillating, True
+                        return self.oscillating, True, i + 1
                     self.oscillating[i % 2] = x1
                     if ea < self.tolerance:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Newton Raphson 2", data)
-                        return x1, False
+                        return x1, False, i + 1
                     if (ea >= 90 and i >= 10) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
                         print("diverged")
                         self.add_to_table("Newton Raphson 2", data)
-                        return None, False
+                        return None, False, i + 1
                 self.add_to_table("Newton Raphson 2", data)
                 x0 = x1
             else:
                 print("diverged")
                 self.add_to_table("Newton Raphson 2", data)
-                return None, False
-        return None, False
+                return None, False, i + 1
+        return None, False, self.max_iterations
 
     def fixed_point(self):
         x0 = self.round_to_significant_digit(self.x0)
@@ -200,7 +200,7 @@ class OpenMethods:
             except Exception as e:
                 print("Zero division error")
                 self.add_to_table("Fixed Point", data)
-                return None, False
+                return None, False, i + 1
             if self.is_real(x1):
                 if x1 != 0:
                     zero_flag = False
@@ -209,22 +209,22 @@ class OpenMethods:
                     if self.oscillating[i % 2] - x1 == 0.0:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Newton Raphson 1", data)
-                        return self.oscillating, True
+                        return self.oscillating, True, i + 1
                     self.oscillating[i % 2] = x1
                     if ea < self.tolerance:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Fixed Point", data)
-                        return x1, False
+                        return x1, False, i + 1
                     if (ea >= 90 and i >= 10) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
                         print("diverged")
                         self.add_to_table("Fixed Point", data)
-                        return None, False
+                        return None, False, i + 1
                 else:
                     if zero_flag:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         data.append(0.0)
                         self.add_to_table("Fixed Point", data)
-                        return x1, False
+                        return x1, False, i + 1
                     zero_flag = True
                     data.append("Infinity")
                     ea = float('inf')
@@ -234,8 +234,8 @@ class OpenMethods:
                 print("diverged")
                 data.append("Infinity")
                 self.add_to_table("Fixed Point", data)
-                return None, False
-        return None, False
+                return None, False, i + 1
+        return None, False, self.max_iterations
 
     def round_to_significant_digit(self, num):
         if num == 0:

@@ -912,7 +912,7 @@ class OpenMethodsInput(QDialog):
                 derivative = first_derivative.subs(self.symbol, self.x0).evalf()
                 if abs(derivative) >= 1:
                     msg = QMessageBox().question(self, "Warning",
-                                                 "There is no guaranty the method will converge, do you want to continue ?",
+                                                 "There is no guarantee the method will converge, do you want to continue ?",
                                                  QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                                  QMessageBox.StandardButton.No)
                     if msg == QMessageBox.StandardButton.Yes:
@@ -1010,7 +1010,7 @@ class NonlinearOutputWindow(QDialog):
                                                 precision)
         else:
             self.open = OpenMethods(self.tableWidget, function, tolerance, max_iterations, precision, xl, xu, m)
-        self.flag, self.oscillating = self.solve()
+        self.flag, self.oscillating, self.numberOfIterations = self.solve()
         if self.flag is None:
             self.outputLabel.setText("The method diverged")
         elif self.oscillating:
@@ -1018,6 +1018,7 @@ class NonlinearOutputWindow(QDialog):
         else:
             self.outputLabel.setText("The root value is equal to " + str(self.flag))
         self.timerLabel.setText(f'Time: {self.time:.7f} nano seconds')
+        self.iterationsLabel.setText(f'Number of iterations : {self.numberOfIterations}')
 
     def go_to_previous(self):
         currentIndex = widget.currentIndex()
