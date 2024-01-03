@@ -43,13 +43,10 @@ class OpenMethods:
                 return None, False, i + 1
             if self.is_real(x2):
                 if x2 == 0 or abs(x2) < self.eps:
-                    if zero_flag:
-                        print("Root found at: ", x2, " number of iterations: ", i + 1)
-                        data.append(0.0)
-                        self.add_to_table("Secant", data)
-                        return 0, False, i + 1
-                    zero_flag = True
-                    ea = float('inf')
+                    print("Root found at: ", x2, " number of iterations: ", i + 1)
+                    data.append(0.0)
+                    self.add_to_table("Secant", data)
+                    return 0, False, i + 1
                 else:
                     zero_flag = False
                     ea = abs((x2 - x1) / x2) * 100.0
@@ -63,10 +60,10 @@ class OpenMethods:
                         print("Root found at: ", x2, " number of iterations: ", i + 1)
                         self.add_to_table("Secant", data)
                         return x2, False, i + 1
-                    if (ea >= 90 and i >= 30) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
-                        print("diverged")
-                        self.add_to_table("Secant", data)
-                        return None, False, i + 1
+                    # if (ea >= 90 and i >= 30) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
+                    #     print("diverged")
+                    #     self.add_to_table("Secant", data)
+                    #     return None, False, i + 1
                 self.add_to_table("Secant", data)
                 x0 = x1
                 x1 = x2
@@ -95,16 +92,13 @@ class OpenMethods:
                 print("Zero division error")
                 data.append("Infinity")
                 self.add_to_table("Newton Raphson 1", data)
-                return None, False, i+1
+                return None, False, i + 1
             if self.is_real(x1):
                 if x1 == 0 or abs(x1) < self.eps:
-                    if zero_flag:
-                        print("Root found at: ", x1, " number of iterations: ", i + 1)
-                        data.append(0.0)
-                        self.add_to_table("Newton Raphson 1", data)
-                        return 0, False, i + 1
-                    zero_flag = True
-                    ea = float('inf')
+                    print("Root found at: ", x1, " number of iterations: ", i + 1)
+                    data.append(0.0)
+                    self.add_to_table("Newton Raphson 1", data)
+                    return 0, False, i + 1
                 else:
                     zero_flag = False
                     ea = abs((x1 - x0) / x1) * 100.0
@@ -118,10 +112,10 @@ class OpenMethods:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Newton Raphson 1", data)
                         return x1, False, i + 1
-                    if (ea >= 90 and i >= 30) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
-                        print("diverged")
-                        self.add_to_table("Newton Raphson 1", data)
-                        return None, False, i + 1
+                    # if (ea >= 90 and i >= 30) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
+                    #     print("diverged")
+                    #     self.add_to_table("Newton Raphson 1", data)
+                    #     return None, False, i + 1
                 self.add_to_table("Newton Raphson 1", data)
                 x0 = x1
             else:
@@ -156,13 +150,11 @@ class OpenMethods:
                 return None, False, i + 1
             if self.is_real(x1):
                 if x1 == 0 or abs(x1) < self.eps:
-                    if zero_flag:
-                        print("Root found at: ", x1, " number of iterations: ", i + 1)
-                        data.append(0.0)
-                        self.add_to_table("Newton Raphson 2", data)
-                        return x1, False, i + 1
-                    zero_flag = True
-                    ea = float('inf')
+                    print("Root found at: ", x1, " number of iterations: ", i + 1)
+                    data.append(0.0)
+                    self.add_to_table("Newton Raphson 2", data)
+                    return x1, False, i + 1
+
                 else:
                     zero_flag = False
                     ea = abs((x1 - x0) / x1) * 100.0
@@ -176,10 +168,10 @@ class OpenMethods:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Newton Raphson 2", data)
                         return x1, False, i + 1
-                    if (ea >= 90 and i >= 30) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
-                        print("diverged")
-                        self.add_to_table("Newton Raphson 2", data)
-                        return None, False, i + 1
+                    # if (ea >= 90 and i >= 30) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
+                    #     print("diverged")
+                    #     self.add_to_table("Newton Raphson 2", data)
+                    #     return None, False, i + 1
                 self.add_to_table("Newton Raphson 2", data)
                 x0 = x1
             else:
@@ -215,19 +207,15 @@ class OpenMethods:
                         print("Root found at: ", x1, " number of iterations: ", i + 1)
                         self.add_to_table("Fixed Point", data)
                         return x1, False, i + 1
-                    if (ea >= 90 and i >= 30) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
-                        print("diverged")
-                        self.add_to_table("Fixed Point", data)
-                        return None, False, i + 1
+                    # if (ea >= 90 and i >= 30) or x1 >= sys.float_info.max or x1 <= -sys.float_info.max:
+                    #     print("diverged")
+                    #     self.add_to_table("Fixed Point", data)
+                    #     return None, False, i + 1
                 else:
-                    if zero_flag:
-                        print("Root found at: ", x1, " number of iterations: ", i + 1)
-                        data.append(0.0)
-                        self.add_to_table("Fixed Point", data)
-                        return x1, False, i + 1
-                    zero_flag = True
-                    data.append("Infinity")
-                    ea = float('inf')
+                    print("Root found at: ", x1, " number of iterations: ", i + 1)
+                    data.append(0.0)
+                    self.add_to_table("Fixed Point", data)
+                    return x1, False, i + 1
                 self.add_to_table("Fixed Point", data)
                 x0 = x1
             else:
@@ -245,7 +233,9 @@ class OpenMethods:
             return x
 
     def is_real(self, number):
-        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number, sympy.core.numbers.Integer) or isinstance(number, float) or isinstance(number, int)
+        flag1 = isinstance(number, sympy.core.numbers.Float) or isinstance(number,
+                                                                           sympy.core.numbers.Integer) or isinstance(
+            number, float) or isinstance(number, int)
         return flag1
 
     def add_to_table(self, method, data):
