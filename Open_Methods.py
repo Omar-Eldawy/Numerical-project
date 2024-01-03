@@ -42,7 +42,7 @@ class OpenMethods:
                 self.add_to_table("Secant", data)
                 return None, False, i + 1
             if self.is_real(x2):
-                if x2 == 0 or abs(x2) < self.eps:
+                if (x2 == 0 or abs(x2) < self.eps) and (self.expression.subs(self.x, x2).evalf() == 0 or abs(self.expression.subs(self.x, x2).evalf()) < self.eps):
                     print("Root found at: ", x2, " number of iterations: ", i + 1)
                     data.append(0.0)
                     self.add_to_table("Secant", data)
@@ -94,7 +94,7 @@ class OpenMethods:
                 self.add_to_table("Newton Raphson 1", data)
                 return None, False, i + 1
             if self.is_real(x1):
-                if x1 == 0 or abs(x1) < self.eps:
+                if (x1 == 0 or abs(x1) < self.eps) and (self.expression.subs(self.x, x1).evalf() == 0 or abs(self.expression.subs(self.x, x1).evalf()) < self.eps):
                     print("Root found at: ", x1, " number of iterations: ", i + 1)
                     data.append(0.0)
                     self.add_to_table("Newton Raphson 1", data)
@@ -149,7 +149,7 @@ class OpenMethods:
                 self.add_to_table("Newton Raphson 2", data)
                 return None, False, i + 1
             if self.is_real(x1):
-                if x1 == 0 or abs(x1) < self.eps:
+                if (x1 == 0 or abs(x1) < self.eps) and (self.expression.subs(self.x, x1).evalf() == 0 or abs(self.expression.subs(self.x, x1).evalf()) < self.eps):
                     print("Root found at: ", x1, " number of iterations: ", i + 1)
                     data.append(0.0)
                     self.add_to_table("Newton Raphson 2", data)
@@ -194,7 +194,7 @@ class OpenMethods:
                 self.add_to_table("Fixed Point", data)
                 return None, False, i + 1
             if self.is_real(x1):
-                if x1 != 0 and abs(x1) >= self.eps:
+                if (x1 != 0 and abs(x1) >= self.eps) and (self.expression.subs(self.x, x1).evalf() != 0 or abs(self.expression.subs(self.x, x1).evalf()) >= self.eps):
                     zero_flag = False
                     ea = abs((x1 - x0) / x1) * 100.0
                     data.append(ea)
