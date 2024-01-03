@@ -16,7 +16,7 @@ class OpenMethods:
         self.x0 = x0
         self.x1 = x1
         self.m = m
-        self.eps = 10 ** (-self.precision)
+        self.eps = 10 ** (-16)
         self.table = table
         self.counter = 0
         self.oscillating = [sys.float_info.max, sys.float_info.max]
