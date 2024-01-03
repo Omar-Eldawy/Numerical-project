@@ -13,7 +13,7 @@ class BracketingMethods:
         self.max_iterations = max_iterations
         self.precision = precision
         self.x = symbols('x')
-        self.eps = 10**(-16)
+        self.eps = 10**(-self.precision)
         self.table = table
         self.counter = 0
 
