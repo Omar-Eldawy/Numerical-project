@@ -1,6 +1,8 @@
 import string
 
+import numpy as np
 import sympy
+from matplotlib import pyplot as plt
 from sympy import sympify, symbols, real_root, Pow
 import Open_Methods
 

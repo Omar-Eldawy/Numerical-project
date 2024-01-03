@@ -827,6 +827,8 @@ class OpenMethodsInput(QDialog):
             self.mInput.hide()
             self.x1Label.hide()
             self.X1Input.hide()
+            if self.method == "Fixed Point":
+                self.label_4.setText("Enter equation g(x)")
         else:
             return
 
