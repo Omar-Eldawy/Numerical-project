@@ -13,7 +13,7 @@ class BracketingMethods:
         self.max_iterations = max_iterations
         self.precision = precision
         self.x = symbols('x')
-        self.eps = 10**(-self.precision)
+        self.eps = 10**(-10)
         self.table = table
         self.counter = 0
 
@@ -23,7 +23,6 @@ class BracketingMethods:
         xr_old = 0.0
         xr_new = 0.0
         data = []
-        zero_flag = False
         if fl * fu > 0:
             print("No root in this interval")
             return None, False, 0
@@ -55,27 +54,28 @@ class BracketingMethods:
             data.append(fl)
             data.append(fu)
             data.append(fr)
-            if fr * fl < 0:
-                self.xu = xr_new
-            elif fr * fl > 0:
-                self.xl = xr_new
-            else:
+            if fr * fl == 0:
                 print("Root found at: ", xr_new, " number of iterations: ", i + 1)
                 data.append(0.0)
                 self.add_to_table(data)
+                if abs(xr_new) < self.eps:
+                    return 0, False, i + 1
                 return xr_new, False, i + 1
+            elif fr * fl < 0:
+                self.xu = xr_new
+            elif fr * fl > 0:
+                self.xl = xr_new
             if xr_new == 0 or abs(xr_new) < self.eps:
-                if zero_flag:
+                fx = self.expression.subs(self.x, 0).evalf()
+                if fx == 0 or abs(fx) < self.eps:
                     data.append(0)
                     self.add_to_table(data)
                     return 0, False, i + 1
                 data.append("Infinity")
                 self.add_to_table(data)
-                zero_flag = True
                 continue
             ea = abs((xr_new - xr_old) / xr_new) * 100.0
             data.append(ea)
-            zero_flag = False
             if ea < self.tolerance:
                 print("Root found at: ", xr_new, " number of iterations: ", i + 1)
                 self.add_to_table(data)
@@ -89,7 +89,6 @@ class BracketingMethods:
         fl = self.round_to_significant_digit(self.expression.subs(self.x, self.xl).evalf())
         fu = self.round_to_significant_digit(self.expression.subs(self.x, self.xu).evalf())
         data = []
-        zero_flag = False
         if fl * fu > 0:
             print("No root in this interval")
             return None, False, 0
@@ -143,17 +142,16 @@ class BracketingMethods:
                 self.add_to_table(data)
                 return xr_new, False, i + 1
             if xr_new == 0 or abs(xr_new) < self.eps:
-                if zero_flag:
+                fx = self.round_to_significant_digit(self.expression.subs(self.x, 0).evalf())
+                if fx == 0 or abs(fx) < self.eps:
                     data.append(0)
                     self.add_to_table(data)
                     return 0, False, i + 1
                 data.append("Infinity")
                 self.add_to_table(data)
-                zero_flag = True
                 continue
             ea = abs((xr_new - xr_old) / xr_new) * 100.0
             data.append(ea)
-            zero_flag = False
             if ea < self.tolerance:
                 print("Root found at: ", xr_new, " number of iterations: ", i + 1)
                 self.add_to_table(data)
