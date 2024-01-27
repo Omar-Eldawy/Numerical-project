@@ -3,9 +3,7 @@ import math
 
 import numpy as np
 from PyQt6 import QtWidgets
-# from PySide6 import QtWidgets
 from numpy import array
-from PyQt6.QtWidgets import QApplication, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 
 class LinearSolver:
